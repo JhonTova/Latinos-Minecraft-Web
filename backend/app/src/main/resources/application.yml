@@ -1,0 +1,171 @@
+spring:
+  application:
+    name: latinosmc
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/latinosmc}
+    username: ${DB_USER:latinosmc}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      # Un timeout corto falla rapido y de forma visible. Uno largo deja
+      # peticiones colgadas y convierte una caida de BD en un cuelgue del
+      # servicio entero.
+      connection-timeout: 3000
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # Sin baseline automatico: si la base de datos tiene estado inesperado,
+    # queremos enterarnos, no que Flyway lo asuma.
+    baseline-on-migrate: false
+
+  threads:
+    virtual:
+      # Virtual threads (Java 21). Los heartbeats son E/S masiva y concurrente:
+      # es exactamente el caso para el que sirven.
+      enabled: true
+
+  jackson:
+    # Los nulos SE SERIALIZAN. Estaba en 'non_null' para ahorrar bytes y salio
+    # mucho mas caro que los bytes que ahorraba.
+    #
+    # Con 'non_null', un campo nulo desaparece del JSON: un espacio destacado
+    # libre no llegaba como {"posicion":1,"servidor":null} sino como
+    # {"posicion":1}. En el cliente, `servidor !== null` es CIERTO cuando el
+    # campo no existe —undefined no es null—, asi que los cinco huecos vacios
+    # pasaban un filtro pensado para descartarlos y reventaban despues.
+    #
+    # Ademas, todos los tipos de TypeScript declaran `campo: string | null`. Que
+    # la API entregue a veces la clave y a veces no convierte cada uno de esos
+    # tipos en una mentira, y el fallo aparece siempre lejos de aqui.
+    default-property-inclusion: always
+
+  mail:
+    # Sin host configurado, los codigos salen por consola. Con el, se envian.
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          # STARTTLS: la conexion empieza en claro y se cifra antes de enviar
+          # credenciales. Sin 'required', un atacante en medio podria impedir el
+          # cambio a cifrado y quedarse con la contrasena en texto plano.
+          starttls:
+            enable: true
+            required: true
+        # Sin estos, un servidor SMTP que no responde deja la peticion colgada
+        # indefinidamente y con ella el hilo que la atiende.
+        smtps:
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+
+  servlet:
+    multipart:
+      # Tope duro antes de que la petición llegue siquiera al controlador. El
+      # límite fino por tipo de imagen se aplica después (ADR-0017); este solo
+      # existe para que nadie pueda ocupar disco y memoria subiendo un archivo
+      # de 2 GB.
+      max-file-size: 6MB
+      max-request-size: 8MB
+
+server:
+  port: ${PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+latinosmc:
+  # Direccion publica del sitio. Se usa para construir el enlace de voto que el
+  # plugin muestra al jugador tras escribir /vote.
+  sitio-url: ${SITIO_URL:http://localhost:3000}
+
+  # Direccion publica de la API. Se usa para construir la URL de retorno de
+  # Google y Discord, que debe coincidir EXACTAMENTE con la que registres en cada
+  # proveedor o rechazaran el acceso.
+  api-url: ${API_URL_PUBLICA:http://localhost:8080}
+
+  oauth:
+    # Sin credenciales, el proveedor no se ofrece: el boton no aparece. Asi el
+    # proyecto arranca recien clonado sin tener que dar de alta aplicaciones en
+    # Google y Discord solo para verlo funcionar.
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:}
+      client-secret: ${GOOGLE_CLIENT_SECRET:}
+    discord:
+      client-id: ${DISCORD_CLIENT_ID:}
+      client-secret: ${DISCORD_CLIENT_SECRET:}
+
+  correo:
+    # Debe ser una direccion DE TU DOMINIO y verificada en el proveedor. Usar
+    # gmail.com aqui hace que los correos vayan directos a spam: el dominio del
+    # remitente no autoriza a tu proveedor a enviar en su nombre.
+    remitente: ${CORREO_REMITENTE:no-responder@latinosmc.com}
+    nombre-remitente: ${CORREO_NOMBRE:LatinosMC}
+
+  paypal:
+    # Sin client-id, PayPal no se activa. Con el, tiene prioridad sobre Stripe.
+    #
+    # Se sacan de developer.paypal.com > Apps & Credentials. Ojo con la pestaña:
+    # las credenciales de Sandbox y las de Live son distintas y no valen unas por
+    # otras.
+    client-id: ${PAYPAL_CLIENT_ID:}
+    secret: ${PAYPAL_SECRET:}
+
+    # Identificador del webhook (empieza por WH-). Sin el no se acepta ningun
+    # webhook, y los pagos solo se confirman cuando el usuario vuelve del sitio
+    # de PayPal. Si cierra el navegador antes, el cobro queda sin confirmar.
+    webhook-id: ${PAYPAL_WEBHOOK_ID:}
+
+    # sandbox = dinero falso para probar. live = dinero real. Empieza en sandbox.
+    modo: ${PAYPAL_MODO:sandbox}
+
+  stripe:
+    # Sin secret-key, la pasarela de Stripe no se activa y se usa el cobro
+    # manual. Es lo que permite que el proyecto funcione recien clonado.
+    #
+    # La clave de PRUEBAS empieza por sk_test_ y la real por sk_live_. Empieza
+    # siempre con la de pruebas: Stripe da tarjetas de prueba con las que se
+    # recorre el flujo entero sin mover un euro.
+    secret-key: ${STRIPE_SECRET_KEY:}
+
+    # Secreto del endpoint de webhook (empieza por whsec_). Sin el, los cobros se
+    # crean pero NUNCA se confirman solos: es un fallo silencioso que se descubre
+    # cuando un cliente pregunta por que pago y no tiene nada.
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+
+  almacen:
+    # Disco local. Con varias instancias hara falta R2 o S3: cada instancia veria
+    # solo sus propios archivos y la mitad de los iconos apareceria rota segun a
+    # que servidor cayera la peticion.
+    ruta: ${ALMACEN_RUTA:./datos/archivos}
+    url-publica: ${ALMACEN_URL:http://localhost:8080/archivos}
+
+  # Clave secreta para el hash de identidades e IPs (ADR-0010).
+  #
+  # NO ROTA NUNCA: si cambia, todos los hashes existentes dejan de coincidir y
+  # se pierde la ventana de voto y el historial antifraude de golpe. Guardala
+  # como se guarda una clave de produccion.
+  #
+  # En desarrollo hay un valor por defecto para que el proyecto arranque recien
+  # clonado. En produccion la variable es obligatoria: ver el arranque de la
+  # aplicacion, que se niega a levantar si detecta el valor de desarrollo.
+  identity-pepper: ${LATINOSMC_IDENTITY_PEPPER:pepper-solo-para-desarrollo-no-usar-en-produccion}
+
+logging:
+  level:
+    root: INFO
+    com.latinosmc: DEBUG

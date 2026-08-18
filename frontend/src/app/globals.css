@@ -1,0 +1,560 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   DESIGN TOKENS — LatinosMC
+   ==========================================================================
+   Este archivo es el sistema de diseno. Casi todo lo que hace que una interfaz
+   parezca profesional se decide aqui: paleta, ritmo tipografico, espaciado,
+   radios y sombras. Los componentes solo consumen estos tokens.
+
+   La marca aun no esta decidida (docs/DECISIONES.md 4.2). La paleta de abajo es
+   PROVISIONAL y deliberadamente sobria. Cuando haya identidad definitiva se
+   cambian los valores de ESTE archivo y toda la aplicacion cambia con ellos:
+   ninguna pantalla lleva colores escritos a mano.
+
+   Regla: si un componente necesita un color que no esta aqui, el problema esta
+   en el sistema, no en el componente. Se anade el token, nunca un valor suelto.
+
+   Se usa oklch en lugar de hex porque es perceptualmente uniforme: al bajar la
+   luminosidad de un color, el resultado se ve igual de "oscuro" en toda la
+   paleta. Con hex hay que ajustar cada tono a ojo.
+   ========================================================================== */
+
+/* Tema oscuro por atributo en <html>. El usuario puede forzarlo; si no elige,
+   manda la preferencia del sistema (mas abajo). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@layer base {
+  :root {
+    /* --- Escala neutra -----------------------------------------------------
+       Teñida de violeta (matiz 300) con muy poca saturacion. No se percibe como
+       "morado": se percibe como que los grises pertenecen a la misma familia que
+       el acento.
+
+       Es la diferencia entre una paleta y dos colores puestos juntos. Un gris
+       neutro puro al lado de un morado saturado hace que el morado parezca
+       pegado encima; un gris con una gota del mismo matiz lo integra.
+
+       En el tema oscuro la saturacion sube un poco: sobre negro, un tinte que
+       en claro seria invisible ahi si se lee, y es lo que evita el "negro
+       carbon" generico. */
+    --neutral-50: oklch(0.99 0.004 300);
+    --neutral-100: oklch(0.972 0.007 300);
+    --neutral-200: oklch(0.928 0.01 300);
+    --neutral-300: oklch(0.872 0.013 300);
+    --neutral-400: oklch(0.712 0.016 300);
+    --neutral-500: oklch(0.566 0.018 300);
+    --neutral-600: oklch(0.455 0.02 300);
+    --neutral-700: oklch(0.372 0.025 300);
+    --neutral-800: oklch(0.272 0.032 300);
+    --neutral-900: oklch(0.192 0.038 300);
+    --neutral-950: oklch(0.128 0.036 300);
+
+    /* --- Acento ------------------------------------------------------------
+       Violeta. Saturado de verdad —es una marca de videojuegos, no un panel de
+       administracion— pero no fluorescente: por encima de 0.22 de croma el
+       morado empieza a vibrar sobre fondo claro y cansa a los pocos segundos.
+
+       Los tonos claros (50 y 100) llevan MUY poca saturacion a proposito. Son
+       fondos de etiqueta y de aviso; un lila fuerte detras de texto pequeño lo
+       vuelve ilegible. */
+    --accent-50: oklch(0.972 0.022 300);
+    --accent-100: oklch(0.938 0.05 300);
+    --accent-300: oklch(0.79 0.14 300);
+    --accent-500: oklch(0.65 0.21 300);
+    --accent-600: oklch(0.575 0.225 300);
+    --accent-700: oklch(0.485 0.2 300);
+    --accent-900: oklch(0.32 0.13 300);
+
+    /* --- Secundario --------------------------------------------------------
+       Dorado. El morado solo se queda frio y un poco tecnologico; el oro le da
+       el punto de "premio" que pide un sitio de rankings, y es el color con el
+       que ya se leen el primer puesto y una corona sin explicar nada.
+
+       Se usa CON CUENTAGOTAS: la linea bajo la cabecera, la medalla del primero
+       y poco mas. Morado y oro repartidos a partes iguales no se leen como una
+       marca, se leen como una promocion de casino. */
+    --oro-400: oklch(0.8 0.15 85);
+    --oro-600: oklch(0.66 0.145 75);
+
+    /* --- Estado ------------------------------------------------------------
+       No son decorativos: comunican consecuencias. Nunca se usa solo el color
+       para transmitir informacion (accesibilidad): siempre acompanado de texto
+       o icono. */
+    --success: oklch(0.66 0.15 150);
+    --warning: oklch(0.76 0.145 75);
+    --danger: oklch(0.605 0.205 27);
+    --info: oklch(0.63 0.14 245);
+
+    /* --- Tema claro (por defecto) ----------------------------------------- */
+    --bg: var(--neutral-50);
+    --surface: oklch(1 0 0);
+    --surface-raised: oklch(1 0 0);
+    --surface-sunken: var(--neutral-100);
+
+    /* El tono tierra, solo para detalles. Ver la nota en la escala de arriba. */
+    --secundario: var(--oro-400);
+
+    --border: var(--neutral-200);
+    --border-strong: var(--neutral-300);
+
+    --text: var(--neutral-900);
+    --text-muted: var(--neutral-600);
+    --text-subtle: var(--neutral-500);
+    --text-on-accent: oklch(1 0 0);
+
+    --primary: var(--accent-600);
+    --primary-hover: var(--accent-700);
+    --primary-subtle: var(--accent-50);
+
+    --ring: var(--accent-600);
+
+    /* Sombras cortas y suaves. Las grandes y difusas envejecen mal y ensucian:
+       la elevacion se sugiere, no se grita.
+
+       Llevan un matiz verde muy leve en lugar de negro puro. Una sombra gris
+       sobre un fondo calido se ve sucia; teñirla del color del entorno es lo
+       que hace que la elevacion parezca luz y no una mancha. */
+    --shadow-sm: 0 1px 2px 0 oklch(0.28 0.05 300 / 0.06);
+    --shadow-md:
+      0 2px 4px -1px oklch(0.28 0.05 300 / 0.07),
+      0 6px 16px -3px oklch(0.28 0.05 300 / 0.09);
+    --shadow-lg:
+      0 4px 8px -2px oklch(0.28 0.05 300 / 0.08),
+      0 16px 40px -6px oklch(0.28 0.05 300 / 0.12);
+
+    /* --- Movimiento --------------------------------------------------------
+       Las duraciones y las curvas se declaran aqui por el mismo motivo que los
+       colores: si cada componente elige la suya, la interfaz se mueve a
+       destiempo y se nota aunque nadie sepa decir por que.
+
+       Las curvas terminan lentas (el segundo valor de control cerca de 1): asi
+       el movimiento "aterriza" en vez de frenar en seco. */
+    --ease-suave: cubic-bezier(0.22, 0.61, 0.36, 1);
+    --ease-salida: cubic-bezier(0.34, 1.3, 0.64, 1);
+
+    /* Rapido para lo que responde al dedo, lento para lo que entra en pantalla.
+       Un hover de 300ms se siente pastoso; una entrada de 120ms, brusca. */
+    --dur-rapida: 120ms;
+    --dur-media: 200ms;
+    --dur-lenta: 420ms;
+  }
+
+  /* Valores del tema oscuro, en un solo sitio para no duplicarlos. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: var(--neutral-950);
+      --surface: var(--neutral-900);
+      --surface-raised: var(--neutral-800);
+      --surface-sunken: oklch(0.108 0.032 300);
+      --secundario: var(--oro-600);
+
+      --border: var(--neutral-800);
+      --border-strong: var(--neutral-700);
+
+      --text: var(--neutral-100);
+      --text-muted: var(--neutral-400);
+      --text-subtle: var(--neutral-500);
+
+      --primary: oklch(0.7 0.2 300);
+      --primary-hover: oklch(0.79 0.16 300);
+      --primary-subtle: oklch(0.245 0.075 300);
+
+      --ring: oklch(0.7 0.2 300);
+
+      --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.3);
+      --shadow-md:
+        0 2px 4px -1px oklch(0 0 0 / 0.35), 0 4px 12px -2px oklch(0 0 0 / 0.4);
+      --shadow-lg:
+        0 4px 8px -2px oklch(0 0 0 / 0.4), 0 12px 32px -4px oklch(0 0 0 / 0.5);
+    }
+  }
+
+  /* Eleccion explicita del usuario: gana sobre la del sistema. */
+  :root[data-theme="dark"] {
+    --bg: var(--neutral-950);
+    --surface: var(--neutral-900);
+    --surface-raised: var(--neutral-800);
+    --surface-sunken: oklch(0.108 0.032 300);
+    --secundario: var(--oro-600);
+
+    --border: var(--neutral-800);
+    --border-strong: var(--neutral-700);
+
+    --text: var(--neutral-100);
+    --text-muted: var(--neutral-400);
+    --text-subtle: var(--neutral-500);
+
+    --primary: oklch(0.7 0.2 300);
+    --primary-hover: oklch(0.79 0.16 300);
+    --primary-subtle: oklch(0.245 0.075 300);
+
+    --ring: oklch(0.7 0.2 300);
+
+    --shadow-sm: 0 1px 2px 0 oklch(0 0 0 / 0.3);
+    --shadow-md:
+      0 2px 4px -1px oklch(0 0 0 / 0.35), 0 4px 12px -2px oklch(0 0 0 / 0.4);
+    --shadow-lg:
+      0 4px 8px -2px oklch(0 0 0 / 0.4), 0 12px 32px -4px oklch(0 0 0 / 0.5);
+  }
+
+  * {
+    border-color: var(--border);
+  }
+
+  /* Titulares. Se aplica con una clase y no a todos los h1..h6 para poder
+     elegir: un titulo de tarjeta pequeña se lee mejor con la fuente de texto,
+     y usar la de display en todo la vuelve invisible por repeticion. */
+  .display {
+    font-family: var(--font-display), var(--font-sans), sans-serif;
+    letter-spacing: -0.015em;
+  }
+
+  /* Enlaces de navegacion en versalitas. El espaciado amplio es lo que hace que
+     unas mayusculas se lean como identidad y no como un grito. */
+  .nav-display {
+    font-family: var(--font-display), var(--font-sans), sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 600;
+  }
+
+  /* Tabular en las cifras del ranking: sin esto, los numeros "bailan" de ancho
+     al actualizarse y toda la columna se mueve. */
+  .cifras {
+    font-variant-numeric: tabular-nums;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Foco siempre visible. Requisito WCAG 2.2 AA y lo agradece cualquiera que
+     navegue con teclado. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Respetar a quien pidio menos movimiento no es opcional. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   Puente hacia Tailwind: expone los tokens como utilidades (bg-surface,
+   text-muted, border-strong...).
+
+   'inline' hace que Tailwind referencie la variable en vez de copiar su valor,
+   de modo que el cambio de tema funciona solo, sin prefijos dark: repartidos
+   por toda la aplicacion.
+   ========================================================================== */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-subtle: var(--text-subtle);
+  --color-on-accent: var(--text-on-accent);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-subtle: var(--primary-subtle);
+  --color-secundario: var(--secundario);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+
+  /* Ritmo tipografico. Cada paso es perceptiblemente distinto del anterior:
+     una escala con muchos pasos parecidos no crea jerarquia, crea ruido. */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --text-4xl: 3rem;
+
+  /* Radios contenidos. Muy redondeado parece de juguete; sin radio, tosco. */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+/* ==========================================================================
+   MOVIMIENTO
+
+   Tres reglas para que las animaciones sumen en vez de estorbar:
+
+   1. Solo se anima `transform` y `opacity`. Son las dos unicas propiedades que
+      el navegador resuelve sin recalcular el diseño de la pagina; animar
+      `width`, `top` o `height` provoca tirones en moviles.
+   2. Nada se mueve mas de unos pocos pixeles. El movimiento sirve para decir
+      "esto es nuevo" o "esto responde", no para hacer espectaculo.
+   3. Todo esto se apaga entero con `prefers-reduced-motion`. La regla ya esta
+      mas arriba y cubre estas clases sin tener que repetirla.
+   ========================================================================== */
+
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Entrada de un elemento. `backwards` mantiene el estado inicial durante el
+   retardo: sin eso, lo que espera su turno parpadea visible antes de empezar. */
+.entra {
+  animation: entrar var(--dur-lenta) var(--ease-suave) backwards;
+}
+
+/* Escalonado para listas. Que las filas entren juntas se lee como un salto;
+   que entren en cascada, como que la pagina se esta componiendo.
+
+   El retardo se corta a los 8 primeros: mas alla, el ultimo elemento tardaria
+   tanto en aparecer que pareceria que la pagina se ha colgado. */
+.entra-1 { animation-delay: 40ms; }
+.entra-2 { animation-delay: 80ms; }
+.entra-3 { animation-delay: 120ms; }
+.entra-4 { animation-delay: 160ms; }
+.entra-5 { animation-delay: 200ms; }
+.entra-6 { animation-delay: 240ms; }
+.entra-7 { animation-delay: 280ms; }
+.entra-8 { animation-delay: 320ms; }
+
+/* Tarjeta que reacciona al puntero: sube un pelo y gana sombra.
+
+   `will-change` no se pone a proposito. Reservar una capa de composicion para
+   cada tarjeta de una lista larga consume memoria de video sin ganar nada;
+   `transform` ya es barato de por si. */
+.tarjeta-viva {
+  transition:
+    transform var(--dur-media) var(--ease-suave),
+    box-shadow var(--dur-media) var(--ease-suave),
+    border-color var(--dur-media) var(--ease-suave);
+}
+
+.tarjeta-viva:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Solo en dispositivos con puntero de verdad. En una pantalla tactil el
+   :hover se queda "pegado" tras tocar, y la tarjeta se queda levantada. */
+@media (hover: none) {
+  .tarjeta-viva:hover {
+    transform: none;
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+/* Boton que responde al pulsar. El hundimiento al hacer clic es lo que da la
+   sensacion de que el boton "existe": sin el, la interfaz se siente muerta.
+
+   `active` se aplica tambien con teclado, asi que la sensacion es la misma
+   para quien no usa raton. */
+.boton-vivo {
+  transition:
+    background-color var(--dur-rapida) var(--ease-suave),
+    border-color var(--dur-rapida) var(--ease-suave),
+    transform var(--dur-rapida) var(--ease-suave),
+    box-shadow var(--dur-rapida) var(--ease-suave);
+}
+
+.boton-vivo:active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+}
+
+/* Subrayado que crece desde la izquierda. Se hace con un pseudoelemento y
+   `scaleX` en vez de animar el ancho: el ancho fuerza recalculo de diseño en
+   cada fotograma y se nota. */
+.enlace-vivo {
+  position: relative;
+}
+
+.enlace-vivo::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1.5px;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-media) var(--ease-suave);
+}
+
+.enlace-vivo:hover::after,
+.enlace-vivo:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* Trama de bloques: el guino a Minecraft.
+
+   Es una cuadricula de 1px con muy poca opacidad, no una textura de piedra.
+   La diferencia entre "sitio con personalidad" y "sitio de fan" esta en la
+   sutileza: si se nota a primera vista, se ha pasado.
+
+   Se enmascara hacia abajo para que se desvanezca en lugar de cortarse. */
+.trama-bloques {
+  position: relative;
+  isolation: isolate;
+}
+
+.trama-bloques::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(to right, var(--border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.5;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+  pointer-events: none;
+}
+
+/* Punto que late: sirve para "en linea". El latido comunica actividad en
+   tiempo real de una forma que un punto fijo no puede. */
+@keyframes latido {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+}
+
+.late {
+  animation: latido 2.4s var(--ease-suave) infinite;
+}
+
+/* Barrido de carga. Reemplaza al bloque gris fijo: comunica "viene en camino"
+   en lugar de "aqui no hay nada". */
+@keyframes barrido {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+.cargando {
+  background-image: linear-gradient(
+    90deg,
+    var(--surface-sunken) 25%,
+    var(--border) 50%,
+    var(--surface-sunken) 75%
+  );
+  background-size: 200% 100%;
+  animation: barrido 1.6s linear infinite;
+}
+
+/* ==========================================================================
+   TEMAS DE SERVIDOR
+
+   Cada dueño elige uno para SU ficha. Un servidor de temática rosa no tiene por
+   qué verse verde, y dejarles ese control hace que la ficha se sienta suya.
+
+   Se aplica con `data-tema` sobre un contenedor, no sobre <html>: así el tema
+   afecta solo a la ficha del servidor y no contamina la cabecera, el pie ni
+   ninguna otra parte del sitio. Es la diferencia entre "personalizar tu página"
+   y "repintar LatinosMC entero".
+
+   Solo se redefinen tres variables. Es deliberado: con más, un dueño con mal
+   gusto podría dejar su ficha ilegible —texto claro sobre fondo claro— y el
+   problema lo tendríamos nosotros. Los fondos y el texto siguen siendo los del
+   sitio, así que el contraste está garantizado pase lo que pase.
+   ========================================================================== */
+
+[data-tema="DEFECTO"] {
+  --primary: oklch(0.575 0.225 300);
+  --primary-hover: oklch(0.485 0.2 300);
+  --primary-subtle: oklch(0.972 0.022 300);
+}
+
+[data-tema="ESMERALDA"] {
+  --primary: oklch(0.585 0.138 145);
+  --primary-hover: oklch(0.48 0.115 145);
+  --primary-subtle: oklch(0.968 0.03 145);
+}
+
+[data-tema="ROSA"] {
+  --primary: oklch(0.6 0.19 355);
+  --primary-hover: oklch(0.5 0.17 355);
+  --primary-subtle: oklch(0.965 0.028 355);
+}
+
+[data-tema="LAVA"] {
+  --primary: oklch(0.585 0.2 30);
+  --primary-hover: oklch(0.49 0.18 30);
+  --primary-subtle: oklch(0.962 0.032 30);
+}
+
+[data-tema="OCEANO"] {
+  --primary: oklch(0.56 0.15 245);
+  --primary-hover: oklch(0.47 0.135 245);
+  --primary-subtle: oklch(0.962 0.03 245);
+}
+
+[data-tema="AMATISTA"] {
+  --primary: oklch(0.55 0.18 300);
+  --primary-hover: oklch(0.46 0.16 300);
+  --primary-subtle: oklch(0.962 0.03 300);
+}
+
+[data-tema="ORO"] {
+  --primary: oklch(0.66 0.145 75);
+  --primary-hover: oklch(0.56 0.13 75);
+  --primary-subtle: oklch(0.965 0.035 75);
+}
+
+/* En tema oscuro los acentos suben de luminosidad. Un color pensado para fondo
+   claro se apaga sobre fondo oscuro hasta desaparecer, y el mismo tono que era
+   elegante de día se vuelve ilegible de noche. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-tema="DEFECTO"]   { --primary: oklch(0.7 0.2 300);   --primary-hover: oklch(0.79 0.16 300); --primary-subtle: oklch(0.245 0.075 300); }
+  :root:not([data-theme="light"]) [data-tema="ESMERALDA"] { --primary: oklch(0.68 0.145 145); --primary-hover: oklch(0.815 0.118 145); --primary-subtle: oklch(0.255 0.055 145); }
+  :root:not([data-theme="light"]) [data-tema="ROSA"]      { --primary: oklch(0.72 0.16 355); --primary-hover: oklch(0.82 0.12 355); --primary-subtle: oklch(0.26 0.06 355); }
+  :root:not([data-theme="light"]) [data-tema="LAVA"]      { --primary: oklch(0.7 0.17 30);   --primary-hover: oklch(0.8 0.13 30);  --primary-subtle: oklch(0.26 0.06 30); }
+  :root:not([data-theme="light"]) [data-tema="OCEANO"]    { --primary: oklch(0.7 0.13 245);  --primary-hover: oklch(0.8 0.1 245);  --primary-subtle: oklch(0.26 0.05 245); }
+  :root:not([data-theme="light"]) [data-tema="AMATISTA"]  { --primary: oklch(0.7 0.15 300);  --primary-hover: oklch(0.8 0.12 300); --primary-subtle: oklch(0.26 0.055 300); }
+  :root:not([data-theme="light"]) [data-tema="ORO"]       { --primary: oklch(0.78 0.14 75);  --primary-hover: oklch(0.86 0.11 75); --primary-subtle: oklch(0.26 0.05 75); }
+}
+
+:root[data-theme="dark"] [data-tema="DEFECTO"]   { --primary: oklch(0.7 0.2 300);   --primary-hover: oklch(0.79 0.16 300); --primary-subtle: oklch(0.245 0.075 300); }
+:root[data-theme="dark"] [data-tema="ESMERALDA"] { --primary: oklch(0.68 0.145 145); --primary-hover: oklch(0.815 0.118 145); --primary-subtle: oklch(0.255 0.055 145); }
+:root[data-theme="dark"] [data-tema="ROSA"]      { --primary: oklch(0.72 0.16 355); --primary-hover: oklch(0.82 0.12 355); --primary-subtle: oklch(0.26 0.06 355); }
+:root[data-theme="dark"] [data-tema="LAVA"]      { --primary: oklch(0.7 0.17 30);   --primary-hover: oklch(0.8 0.13 30);  --primary-subtle: oklch(0.26 0.06 30); }
+:root[data-theme="dark"] [data-tema="OCEANO"]    { --primary: oklch(0.7 0.13 245);  --primary-hover: oklch(0.8 0.1 245);  --primary-subtle: oklch(0.26 0.05 245); }
+:root[data-theme="dark"] [data-tema="AMATISTA"]  { --primary: oklch(0.7 0.15 300);  --primary-hover: oklch(0.8 0.12 300); --primary-subtle: oklch(0.26 0.055 300); }
+:root[data-theme="dark"] [data-tema="ORO"]       { --primary: oklch(0.78 0.14 75);  --primary-hover: oklch(0.86 0.11 75); --primary-subtle: oklch(0.26 0.05 75); }

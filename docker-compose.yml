@@ -1,0 +1,149 @@
+# =============================================================================
+# LatinosMC — despliegue completo
+# =============================================================================
+# Docker Compose y no Kubernetes (ADR-0001 y Requisito 08): operar Kubernetes es
+# un empleo a tiempo completo. Esto cabe en un VPS y se entiende de un vistazo.
+#
+#   docker compose up -d          arrancar
+#   docker compose logs -f api    ver logs del backend
+#   docker compose down           parar (los datos se conservan)
+# =============================================================================
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-latinosmc}
+      POSTGRES_USER: ${DB_USER:-latinosmc}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en el archivo .env}
+    volumes:
+      # Carpeta dentro del proyecto en lugar de un volumen con nombre de Docker.
+      # Un volumen de Docker vive en /var/lib/docker/volumes y es fácil de borrar
+      # por accidente con un `docker system prune`, además de quedar fuera de las
+      # copias de seguridad que ya cubren esta ruta.
+      #
+      # OJO con la ruta: desde PostgreSQL 18 el montaje va en /var/lib/postgresql
+      # y NO en /var/lib/postgresql/data como en las versiones anteriores. La
+      # imagen crea dentro un subdirectorio por versión mayor, que es lo que
+      # permite actualizar con pg_upgrade sin cruzar el límite del montaje.
+      # Con la ruta antigua el contenedor se niega a arrancar.
+      - ./data/postgres:/var/lib/postgresql
+      - ./data/copias:/copias
+      # Scripts de mantenimiento, en solo lectura: se ejecutan a mano con psql
+      # -f. Montarlos como ro evita que un fallo dentro del contenedor pueda
+      # reescribir un script que borra datos.
+      - ./scripts:/scripts:ro
+    # Sin 'ports': la base de datos NO se expone a internet. Solo la alcanzan
+    # los servicios de esta red interna. Exponer el 5432 al mundo es una de las
+    # formas mas rapidas de perder una base de datos.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-latinosmc} -d ${DB_NAME:-latinosmc}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      # La primera vez PostgreSQL tiene que crear la base desde cero, y eso tarda.
+      # Sin este margen, los reintentos se agotan durante la inicializacion y el
+      # contenedor se declara enfermo cuando en realidad solo estaba arrancando.
+      start_period: 60s
+    mem_limit: ${DB_MEMORIA:-512m}
+    networks: [interna]
+
+  api:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        # Espera a que la base responda de verdad, no solo a que el contenedor
+        # exista. Sin esto, el backend arranca antes y falla en la primera
+        # migracion.
+        condition: service_healthy
+    environment:
+      # 'staging' mientras no haya proveedor de correo: los códigos de
+      # verificación salen en los logs (`docker compose logs api`) en vez de
+      # enviarse. Cámbialo a 'prod' cuando configures el correo — en 'prod' la
+      # aplicación se niega a arrancar sin él, para que nadie descubra tarde que
+      # sus usuarios nunca recibieron nada.
+      SPRING_PROFILES_ACTIVE: ${PERFIL:-staging}
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-latinosmc}
+      DB_USER: ${DB_USER:-latinosmc}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en el archivo .env}
+      # Si esta variable falta, la aplicacion se niega a arrancar en produccion.
+      # Es deliberado: sin ella, los hashes de identidad se calcularian con una
+      # clave publica y el antifraude seria reversible por cualquiera.
+      LATINOSMC_IDENTITY_PEPPER: ${LATINOSMC_IDENTITY_PEPPER:?Define LATINOSMC_IDENTITY_PEPPER en el archivo .env}
+      LATINOSMC_CORS_ORIGENES: ${SITIO_URL:-http://localhost:3000}
+      SITIO_URL: ${SITIO_URL:-http://localhost:3000}
+      API_URL_PUBLICA: ${API_URL_PUBLICA:-http://localhost:8080}
+
+      # Vacíos = los botones de Google y Discord no aparecen. El registro por
+      # correo funciona igual.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+
+      # Vacíos = cobro manual (tú confirmas los pedidos desde el panel).
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID:-}
+      PAYPAL_SECRET: ${PAYPAL_SECRET:-}
+      PAYPAL_WEBHOOK_ID: ${PAYPAL_WEBHOOK_ID:-}
+      PAYPAL_MODO: ${PAYPAL_MODO:-sandbox}
+
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      CORREO_REMITENTE: ${CORREO_REMITENTE:-no-responder@latinosmc.com}
+      CORREO_NOMBRE: ${CORREO_NOMBRE:-LatinosMC}
+
+      # Las imágenes subidas viven aquí. Con volumen, sobreviven a un
+      # `docker compose down`.
+      ALMACEN_RUTA: /datos/archivos
+      ALMACEN_URL: ${API_URL_PUBLICA:-http://localhost:8080}/archivos
+    volumes:
+      # Igual que la base de datos: dentro del proyecto, no en un volumen de
+      # Docker. Son las imágenes que suben los usuarios; perderlas significa
+      # servidores sin icono y sin forma de recuperarlos.
+      - ./data/archivos:/datos/archivos
+    # Solo accesible desde la propia máquina. El Nginx del host es quien lo
+    # publica hacia internet con HTTPS. Sin el 127.0.0.1, Docker abriría el
+    # puerto al mundo saltándose el cortafuegos — es un fallo silencioso muy
+    # común: parece cerrado en ufw y en realidad está abierto.
+    ports:
+      - "127.0.0.1:${API_PUERTO:-8091}:8080"
+    # Sin este límite, la JVM ve la RAM del HOST y reserva el 75% de TODA la
+    # máquina (ver JAVA_OPTS en el Dockerfile). En un VPS compartido con otros
+    # servicios, eso los mata a todos. El límite es lo que hace que
+    # MaxRAMPercentage signifique lo que uno cree que significa.
+    mem_limit: ${API_MEMORIA:-768m}
+    networks: [interna]
+
+  web:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      # Dentro de la red de Docker el backend se llama 'api', no 'localhost'.
+      API_URL: http://api:8080/api/v1
+
+      # Dominio público. Lo usan el sitemap, los enlaces canónicos y las URLs
+      # absolutas de las etiquetas Open Graph.
+      #
+      # Sin esto, al compartir un enlace en Discord la imagen sale rota: las
+      # rutas relativas se resuelven contra el servidor de quien las lee, no
+      # contra el nuestro.
+      SITIO_URL: ${SITIO_URL:-http://localhost:3000}
+    ports:
+      - "127.0.0.1:${WEB_PUERTO:-3010}:3000"
+    mem_limit: ${WEB_MEMORIA:-384m}
+    networks: [interna]
+
+networks:
+  interna:
+    driver: bridge

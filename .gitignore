@@ -1,0 +1,66 @@
+# =============================================================================
+# Secretos — NUNCA al repositorio
+# =============================================================================
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+*.jks
+credenciales*
+secretos*
+
+# =============================================================================
+# Datos generados en tiempo de ejecución
+# =============================================================================
+# Base de datos, imágenes subidas y copias de seguridad. Son datos de
+# producción: pesan, contienen datos personales y no son código.
+data/
+datos/
+copias/
+*.sql.gz
+
+# =============================================================================
+# Compilación
+# =============================================================================
+target/
+*.class
+build/
+
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# =============================================================================
+# Logs
+# =============================================================================
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# =============================================================================
+# Editores y sistema
+# =============================================================================
+.idea/
+.vscode/
+*.iml
+*.swp
+.DS_Store
+Thumbs.db
+
+# =============================================================================
+# Ficheros locales de cada desarrollador — no van al repositorio
+# =============================================================================
+# Escritos con la MISMA caja que el fichero real, a proposito: Windows y macOS
+# ignoran las mayusculas al comparar (git pone core.ignorecase = true), asi que
+# una entrada con otra caja funcionaba aqui y no funcionaba en el VPS. El mismo
+# repositorio se comportaba distinto segun la maquina.
+CLAUDE.md
+DESPLIEGUE.md
+.claude/
+
+# Notas de trabajo personales de cada desarrollador.
+*.local.md
