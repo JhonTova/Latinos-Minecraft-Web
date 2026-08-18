@@ -1,6 +1,7 @@
 import { BotonVotar } from "@/components/boton-votar";
 import { resolverEnlaceDeVoto } from "@/lib/api";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Votar",
@@ -72,6 +73,15 @@ function EnlaceNoValido() {
         <p className="text-sm text-muted">Vuelve a tu servidor y escribe</p>
         <p className="mt-1 font-mono text-lg font-medium">/votar</p>
       </div>
+
+      {/* Un código mal escrito acaba aquí igual que uno caducado, y sin esta
+          salida el jugador tendría que volver atrás a ciegas. */}
+      <Link
+        href="/votar"
+        className="enlace-vivo mt-4 inline-block text-sm font-medium text-primary"
+      >
+        Escribir otro código
+      </Link>
     </main>
   );
 }

@@ -97,8 +97,8 @@ voto:
 # Referencia: https://docs.advntr.dev/minimessage/format.html
 #
 # Sustituciones disponibles:
-#   {codigo}   el código de voto (K7M2-9QX4-RT3F)
-#   {sitio}    el dominio de la web
+#   {codigo}   el código de voto (K7M2-9QX4)
+#   {sitio}    la página donde se escribe el código (latinosmc.com/votar)
 #   {espera}   los segundos configurados arriba
 #   {restante} cuánto falta para poder votar ("6 horas y 42 minutos")
 #
@@ -111,9 +111,11 @@ mensajes:
   # Cuando alguien repite /votar sin dejar respirar al anterior.
   espera: "<gray>Un momento, que ya estoy en ello...</gray>"
 
-  # El bloque principal. El código va aquí porque los jugadores de Bedrock
-  # (móvil y consola) NO pueden pulsar enlaces en el chat: escribirlo en la web
-  # es su única forma de votar. No lo quites.
+  # El bloque que ve quien SÍ puede pulsar enlaces (Java). El código va aquí
+  # igualmente: sirve para votar desde el móvil sin cerrar el juego.
+  #
+  # {sitio} es la página donde se escribe el código, ya completa
+  # (latinosmc.com/votar), no solo el dominio.
   voto:
     - ""
     - "<green>¡Vota y llévate tu recompensa!</green>"
@@ -128,6 +130,25 @@ mensajes:
 
   boton: "  <aqua><bold>▶ PULSA AQUÍ PARA VOTAR</bold></aqua>"
   boton-encima: "<gray>Abre el enlace en tu navegador</gray>"
+
+  # Lo que ven los jugadores de móvil y consola (Bedrock), que NO pueden pulsar
+  # enlaces en el chat de Minecraft. A ellos no se les enseña el botón: pulsarlo
+  # no hace nada y la conclusión sería que el servidor está roto.
+  #
+  # Escribir el código es su única forma de votar, así que aquí solo van los dos
+  # datos que necesitan: a dónde ir y qué escribir. No lo llenes de texto.
+  voto-bedrock:
+    - ""
+    - "<green>¡Vota y llévate tu recompensa!</green>"
+    - ""
+    - "<gray>1. Entra en <white><bold>{sitio}</bold></white></gray>"
+    - "<gray>2. Escribe este código:</gray>"
+    - ""
+    - "   <aqua><bold>{codigo}</bold></aqua>"
+    - ""
+    - "<dark_gray>Tu recompensa llega sola unos {espera} segundos después.</dark_gray>"
+    - "<dark_gray>El código caduca en 10 minutos.</dark_gray>"
+    - ""
 
   # Ya votó hoy a algún servidor (si el ranking usa un voto diario global).
   ya-voto-hoy: "<yellow>Ya has votado hoy.</yellow> <gray>Podrás volver a votar en {restante}.</gray>"

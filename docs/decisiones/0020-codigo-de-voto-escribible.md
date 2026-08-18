@@ -4,6 +4,9 @@
 - **Fecha:** 2026-08-12
 - **Decide:** el propietario del producto
 - **Modifica:** [ADR-0016 — Token de voto](0016-token-de-voto.md) (el mecanismo, no la decisión)
+- **Modificado por:** [ADR-0026](0026-codigo-de-voto-de-ocho-caracteres.md) — la longitud
+  baja de 12 a 8 caracteres. Todo lo demás de este ADR sigue vigente: el
+  alfabeto, la tolerancia a erratas y el motivo por el que el código existe.
 
 ---
 

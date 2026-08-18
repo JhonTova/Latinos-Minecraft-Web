@@ -124,10 +124,10 @@ export async function MarcasEnLateral() {
       </ul>
 
       <Link
-        href="/destacar"
+        href="/panel/destacar"
         className="enlace-vivo mt-3 inline-block text-xs text-primary"
       >
-        Patrocinar LatinosMC
+        Destacar mi servidor
       </Link>
     </section>
   );

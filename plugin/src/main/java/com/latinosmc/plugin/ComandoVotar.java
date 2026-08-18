@@ -111,6 +111,20 @@ public final class ComandoVotar implements CommandExecutor {
     private void entregarCodigo(Player jugador, ClienteApi.Voto voto) {
         int espera = plugin.getConfig().getInt("voto.espera-segundos", 60);
 
+        if (esBedrock(jugador)) {
+            entregarParaBedrock(jugador, voto, espera);
+        } else {
+            entregarParaJava(jugador, voto, espera);
+        }
+    }
+
+    /**
+     * Mensaje para quien SI puede pulsar enlaces.
+     *
+     * <p>El boton va primero porque es un solo clic. El codigo se queda debajo
+     * como alternativa: sirve para votar desde el movil sin cerrar el juego.
+     */
+    private void entregarParaJava(Player jugador, ClienteApi.Voto voto, int espera) {
         for (Component linea : mensajes.bloque(
                 "voto",
                 List.of(
@@ -125,7 +139,7 @@ public final class ComandoVotar implements CommandExecutor {
                         "<dark_gray>No hace falta que escribas nada más. El código caduca en 10 minutos.</dark_gray>",
                         ""),
                 "codigo", voto.codigo(),
-                "sitio", sitioDe(voto.url()),
+                "sitio", paginaDe(voto.url()),
                 "espera", espera)) {
             jugador.sendMessage(linea);
         }
@@ -135,6 +149,51 @@ public final class ComandoVotar implements CommandExecutor {
                 .clickEvent(ClickEvent.openUrl(voto.url()))
                 .hoverEvent(HoverEvent.showText(
                         mensajes.linea("boton-encima", "<gray>Abre el enlace en tu navegador</gray>"))));
+    }
+
+    /**
+     * Mensaje para movil y consola.
+     *
+     * <p>Sin boton: para ellos ese renglon es una promesa que no se cumple —lo
+     * pulsan y no pasa nada, y la conclusion es que el servidor esta roto. Lo
+     * que necesitan son dos datos y ninguno mas: a donde ir y que escribir.
+     */
+    private void entregarParaBedrock(Player jugador, ClienteApi.Voto voto, int espera) {
+        for (Component linea : mensajes.bloque(
+                "voto-bedrock",
+                List.of(
+                        "",
+                        "<green>¡Vota y llévate tu recompensa!</green>",
+                        "",
+                        "<gray>1. Entra en <white><bold>{sitio}</bold></white></gray>",
+                        "<gray>2. Escribe este código:</gray>",
+                        "",
+                        "   <aqua><bold>{codigo}</bold></aqua>",
+                        "",
+                        "<dark_gray>Tu recompensa llega sola unos {espera} segundos después.</dark_gray>",
+                        "<dark_gray>El código caduca en 10 minutos.</dark_gray>",
+                        ""),
+                "codigo", voto.codigo(),
+                "sitio", paginaDe(voto.url()),
+                "espera", espera)) {
+            jugador.sendMessage(linea);
+        }
+    }
+
+    /**
+     * Si el jugador entro desde movil o consola (Bedrock).
+     *
+     * <p>Se mira el UUID en lugar de depender de Floodgate: a los jugadores de
+     * Bedrock les asigna un identificador cuyos primeros ocho bytes son cero, y
+     * ningun UUID de Java —ni aleatorio ni derivado del nombre en modo offline—
+     * cae ahi. Con esto el plugin no gana una dependencia nueva ni deja de
+     * compilar en un servidor que no tenga Geyser.
+     *
+     * <p>Equivocarse aqui no rompe nada: el peor caso es enseñar el mensaje que
+     * no tocaba, y en los dos aparece el codigo.
+     */
+    private boolean esBedrock(Player jugador) {
+        return jugador.getUniqueId().getMostSignificantBits() == 0L;
     }
 
     private void programarComprobacion(Player jugador) {
@@ -149,9 +208,24 @@ public final class ComandoVotar implements CommandExecutor {
         }, ticks);
     }
 
-    private String sitioDe(String url) {
+    /**
+     * Direccion que el jugador tiene que teclear: {@code latinosmc.com/votar}.
+     *
+     * <p>Se quita el codigo del final de la URL y se deja la pagina donde se
+     * escribe. Antes se enseñaba solo el dominio y el jugador aterrizaba en la
+     * portada teniendo que buscar donde meter su codigo — con el reloj de los
+     * diez minutos corriendo. Sin {@code https://} porque no hace falta
+     * escribirlo y son ocho caracteres menos.
+     */
+    private String paginaDe(String url) {
         try {
-            return java.net.URI.create(url).getHost();
+            java.net.URI uri = java.net.URI.create(url);
+            String ruta = uri.getPath() == null ? "" : uri.getPath();
+
+            int ultimaBarra = ruta.lastIndexOf('/');
+            String sinElCodigo = ultimaBarra > 0 ? ruta.substring(0, ultimaBarra) : "";
+
+            return uri.getHost() + sinElCodigo;
         } catch (RuntimeException e) {
             return url;
         }

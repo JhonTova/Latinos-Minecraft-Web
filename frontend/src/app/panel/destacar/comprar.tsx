@@ -90,23 +90,35 @@ export function Comprar({
 
   return (
     <div className="space-y-5">
-      <div>
-        <label htmlFor="servidor" className="mb-1.5 block text-sm font-medium">
-          Servidor
-        </label>
-        <select
-          id="servidor"
-          value={servidorId}
-          onChange={(e) => setServidorId(e.target.value)}
-          className="w-full rounded-md border border-border bg-surface px-3 py-2.5"
-        >
-          {servidores.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.nombre}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Con un solo servidor no hay nada que elegir: un desplegable de una
+          opción es una decisión falsa que sugiere que falta algo por hacer. Se
+          enseña cuál es y se sigue. Con varios, se elige. */}
+      {servidores.length === 1 ? (
+        <div>
+          <span className="mb-1.5 block text-sm font-medium">Servidor</span>
+          <p className="rounded-md border border-border bg-surface-sunken px-3 py-2.5">
+            {servidores[0].nombre}
+          </p>
+        </div>
+      ) : (
+        <div>
+          <label htmlFor="servidor" className="mb-1.5 block text-sm font-medium">
+            Servidor
+          </label>
+          <select
+            id="servidor"
+            value={servidorId}
+            onChange={(e) => setServidorId(e.target.value)}
+            className="w-full rounded-md border border-border bg-surface px-3 py-2.5"
+          >
+            {servidores.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <fieldset>
         <legend className="mb-1.5 text-sm font-medium">Espacio</legend>

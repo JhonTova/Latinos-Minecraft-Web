@@ -34,12 +34,13 @@ contradicciones (documentadas abajo). Este archivo es lo que manda.
 | [0017](decisiones/0017-imagenes-subidas.md) | Imágenes subidas: nada de SVG, todo reprocesado | ✅ Vigente |
 | [0018](decisiones/0018-paypal-como-pasarela-principal.md) | PayPal como pasarela principal, Stripe como alternativa | ✅ Vigente |
 | [0019](decisiones/0019-lecturas-sql-entre-modulos.md) | Deuda deliberada: lecturas SQL de solo lectura entre módulos | ✅ Vigente |
-| [0020](decisiones/0020-codigo-de-voto-escribible.md) | El token de voto pasa a ser un código escribible a mano | ✅ Vigente |
+| [0020](decisiones/0020-codigo-de-voto-escribible.md) | El token de voto pasa a ser un código escribible a mano | ✅ Vigente (longitud modificada por [0026](decisiones/0026-codigo-de-voto-de-ocho-caracteres.md)) |
 | [0021](decisiones/0021-reintento-de-eventos-de-pago.md) | Un evento de pago solo se da por hecho cuando lo está | ✅ Vigente |
 | [0022](decisiones/0022-identidad-del-jugador-en-el-plugin.md) | La identidad del jugador viaja con su tipo, también en el plugin | ✅ Vigente |
 | [0023](decisiones/0023-la-ventana-de-voto-es-de-la-plataforma.md) | La ventana entre votos la fija la plataforma, no el dueño del servidor | ✅ Vigente |
 | [0024](decisiones/0024-retirada-de-servidores-inactivos.md) | Los servidores que dejan de dar señales se retiran del directorio | ✅ Vigente |
 | [0025](decisiones/0025-paginas-por-categoria.md) | Una página propia por modalidad, no un filtro | ✅ Vigente |
+| [0026](decisiones/0026-codigo-de-voto-de-ocho-caracteres.md) | El código de voto baja a ocho caracteres | ✅ Vigente |
 
 ---
 

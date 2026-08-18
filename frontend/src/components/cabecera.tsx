@@ -38,7 +38,12 @@ export async function Cabecera() {
           <div className="pointer-events-auto flex items-center gap-6">
             <EnlaceCentral href="/">Inicio</EnlaceCentral>
             <EnlaceCentral href="/servidores">Servidores</EnlaceCentral>
-            <EnlaceCentral href="/destacar">Destacar</EnlaceCentral>
+            {/* «Votar» y no «Destacar»: quien entra aquí viene a jugar, no a
+                comprar publicidad. Este es el único enlace de la cabecera para
+                el jugador que ya está dentro de un servidor y solo necesita un
+                sitio donde escribir su código — el resto del bucle del producto
+                depende de que ese paso sea fácil de encontrar. */}
+            <EnlaceCentral href="/votar">Votar</EnlaceCentral>
             <EnlaceCentral href="/plugin">Plugin</EnlaceCentral>
           </div>
         </div>
@@ -241,6 +246,11 @@ export async function PieDePagina() {
                 </Link>
               </li>
               <li>
+                <Link href="/votar" className="enlace-vivo">
+                  Votar con mi código
+                </Link>
+              </li>
+              <li>
                 <Link href="/" className="enlace-vivo">
                   Destacados
                 </Link>
@@ -261,8 +271,11 @@ export async function PieDePagina() {
                   Mi panel
                 </Link>
               </li>
+              {/* Al panel y no a una página pública de venta: destacar es algo
+                  que se hace sobre un servidor propio ya registrado, así que la
+                  puerta de entrada es la sesión. */}
               <li>
-                <Link href="/destacar" className="enlace-vivo">
+                <Link href="/panel/destacar" className="enlace-vivo">
                   Destacar mi servidor
                 </Link>
               </li>

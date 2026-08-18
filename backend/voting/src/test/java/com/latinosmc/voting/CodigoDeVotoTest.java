@@ -25,10 +25,15 @@ class CodigoDeVotoTest {
     @DisplayName("Generacion")
     class Generacion {
 
+        /**
+         * Dos grupos de cuatro, no tres. La longitud es una decision de producto
+         * (ADR-0026): con tres grupos el jugador de consola tiene que mirar la
+         * pantalla dos veces, y ese viaje de ida y vuelta es donde se pierde.
+         */
         @Test
-        @DisplayName("tiene la forma de tres grupos de cuatro")
+        @DisplayName("tiene la forma de dos grupos de cuatro")
         void forma() {
-            assertThat(CodigoDeVoto.generar()).matches("[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}");
+            assertThat(CodigoDeVoto.generar()).matches("[0-9A-Z]{4}-[0-9A-Z]{4}");
         }
 
         /**
@@ -56,7 +61,7 @@ class CodigoDeVotoTest {
         /**
          * Un generador roto que devolviera siempre los mismos simbolos pasaria los
          * tests de forma sin problema. Este comprueba que el alfabeto se usa
-         * entero: con 12 caracteres por codigo y 500 codigos son 6000 tiradas, y
+         * entero: con 8 caracteres por codigo y 500 codigos son 4000 tiradas, y
          * ver menos de 30 simbolos distintos de 32 seria una casualidad absurda.
          */
         @Test
@@ -77,12 +82,12 @@ class CodigoDeVotoTest {
     class Normalizacion {
 
         @Test
-        @DisplayName("un codigo recien generado se normaliza a 12 caracteres sin guiones")
+        @DisplayName("un codigo recien generado se normaliza a 8 caracteres sin guiones")
         void idaYVuelta() {
             String generado = CodigoDeVoto.generar();
             String normalizado = CodigoDeVoto.normalizar(generado);
 
-            assertThat(normalizado).hasSize(12).doesNotContain("-");
+            assertThat(normalizado).hasSize(8).doesNotContain("-");
             assertThat(CodigoDeVoto.tieneForma(normalizado)).isTrue();
             assertThat(CodigoDeVoto.agrupar(normalizado)).isEqualTo(generado);
         }
@@ -91,16 +96,16 @@ class CodigoDeVotoTest {
         @ParameterizedTest
         @ValueSource(
                 strings = {
-                    "K7M2-9QX4-RT3F",
-                    "k7m2-9qx4-rt3f",
-                    "K7M29QX4RT3F",
-                    "  K7M2 9QX4 RT3F  ",
-                    "K7M2.9QX4.RT3F",
-                    "K7M2 - 9QX4 - RT3F"
+                    "K7M2-9QX4",
+                    "k7m2-9qx4",
+                    "K7M29QX4",
+                    "  K7M2 9QX4  ",
+                    "K7M2.9QX4",
+                    "K7M2 - 9QX4"
                 })
         @DisplayName("da igual como lo escriba: guiones, espacios, minusculas")
         void mismasVariantes(String escrito) {
-            assertThat(CodigoDeVoto.normalizar(escrito)).isEqualTo("K7M29QX4RT3F");
+            assertThat(CodigoDeVoto.normalizar(escrito)).isEqualTo("K7M29QX4");
         }
 
         /**
@@ -110,21 +115,20 @@ class CodigoDeVotoTest {
          */
         @ParameterizedTest
         @CsvSource({
-            "1I34-5678-9ABC, 11345678 9ABC",
-            "1L34-5678-9ABC, 11345678 9ABC",
-            "0O34-5678-9ABC, 00345678 9ABC",
-            "VU34-5678-9ABC, VV345678 9ABC"
+            "1I34-5678, 11345678",
+            "1L34-5678, 11345678",
+            "0O34-5678, 00345678",
+            "VU34-5678, VV345678"
         })
         @DisplayName("confundir I, L, O o U se corrige en vez de rechazarse")
-        void erratasDeLectura(String escrito, String esperadoConEspacio) {
-            assertThat(CodigoDeVoto.normalizar(escrito))
-                    .isEqualTo(esperadoConEspacio.replace(" ", ""));
+        void erratasDeLectura(String escrito, String esperado) {
+            assertThat(CodigoDeVoto.normalizar(escrito)).isEqualTo(esperado);
         }
 
         @Test
-        @DisplayName("de mas caracteres se queda con los primeros 12")
+        @DisplayName("de mas caracteres se queda con los primeros 8")
         void demasiadoLargo() {
-            assertThat(CodigoDeVoto.normalizar("K7M29QX4RT3FZZZZZZZZ")).isEqualTo("K7M29QX4RT3F");
+            assertThat(CodigoDeVoto.normalizar("K7M29QX4RT3FZZZZ")).isEqualTo("K7M29QX4");
         }
 
         @Test

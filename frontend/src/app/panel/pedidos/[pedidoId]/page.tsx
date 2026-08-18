@@ -70,7 +70,11 @@ export default async function PaginaPedido(
         <div className="mb-6">
           <Aviso tono="atencion">
             Este pedido está sin pagar. Si cancelaste el pago, puedes volver a
-            empezar desde <Link href="/destacar" className="underline">Destacar</Link>.
+            empezar desde{" "}
+            <Link href="/panel/destacar" className="underline">
+              Destacar mi servidor
+            </Link>
+            .
           </Aviso>
         </div>
       )}

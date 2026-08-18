@@ -79,21 +79,13 @@ export default async function PaginaPlugin() {
                 </Paso>
                 <Paso numero={2} titulo="Vota en la web">
                   Si puede pulsar enlaces, pulsa. Si juega desde móvil o consola,
-                  escribe el código: doce caracteres.
+                  escribe el código: ocho caracteres.
                 </Paso>
                 <Paso numero={3} titulo="Recibe su recompensa">
                   Un minuto después, el plugin comprueba y entrega lo que hayas
                   configurado. Sin segundo comando.
                 </Paso>
               </ol>
-
-              <div className="mt-3 rounded-lg border border-primary/25 bg-primary-subtle/40 p-4 text-sm text-pretty">
-                <strong>Por qué importa.</strong> El plugin de votos más
-                extendido obliga a escribir el comando dos veces: una para el
-                enlace y otra para reclamar el premio. La segunda se le olvida a
-                mucha gente, que acaba pensando que tu servidor no paga lo que
-                promete. Aquí no existe esa segunda vez.
-              </div>
             </section>
 
             {/* --- Transparencia ---------------------------------------- */}

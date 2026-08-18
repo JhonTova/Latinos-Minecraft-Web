@@ -4,7 +4,7 @@ import java.security.SecureRandom;
 import java.util.Locale;
 
 /**
- * Codigo de voto: 12 caracteres que un jugador puede escribir a mano.
+ * Codigo de voto: 8 caracteres que un jugador puede escribir a mano.
  *
  * <p><strong>Por que no un token largo en base64.</strong> Los jugadores de
  * Bedrock —moviles y consolas, buena parte del publico hispanohablante— no
@@ -19,22 +19,30 @@ import java.util.Locale;
  * reconocibles por accidente. Lo que se lee mal, se escribe mal, y quien lo
  * escribe mal cree que el sitio no funciona.
  *
- * <p><strong>Entropia.</strong> 12 caracteres sobre 32 simbolos son 60 bits. Con
- * 10 minutos de vigencia, un solo uso y el limite de trafico por IP, un atacante
- * tendria que acertar entre un trillon de combinaciones a diez intentos por
- * minuto. No es un secreto que dure eternamente, y no necesita serlo.
+ * <p><strong>Por que 8 y no 12.</strong> Doce caracteres son tres grupos, y tres
+ * grupos no caben de una vez en la memoria de trabajo de nadie: el jugador de
+ * consola acaba mirando la pantalla, escribiendo cuatro, volviendo a mirar. Ocho
+ * son dos grupos, que es justo lo que se retiene de una lectura. Es un tercio
+ * menos de tecleo y, sobre todo, una mirada menos (ADR-0026).
+ *
+ * <p><strong>Entropia.</strong> 8 caracteres sobre 32 simbolos son 40 bits: un
+ * billon largo de combinaciones. Lo que protege el codigo no es la longitud sino
+ * su vida: 10 minutos, un solo uso y 10 intentos por minuto y por IP. Con diez
+ * mil codigos vivos a la vez —muy por encima de lo realista— una botnet de mil
+ * direcciones tardaria mas de una semana en acertar uno, y el premio serian los
+ * votos de un dia de un jugador. El factor limitante nunca fue la longitud.
  */
 public final class CodigoDeVoto {
 
     private static final String ALFABETO = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-    private static final int LARGO = 12;
+    private static final int LARGO = 8;
     private static final int TAMANO_GRUPO = 4;
 
     private static final SecureRandom ALEATORIO = new SecureRandom();
 
     private CodigoDeVoto() {}
 
-    /** @return un codigo nuevo, ya agrupado: {@code K7M2-9QX4-RT3F} */
+    /** @return un codigo nuevo, ya agrupado: {@code K7M2-9QX4} */
     public static String generar() {
         StringBuilder sb = new StringBuilder(LARGO + 2);
 
@@ -97,7 +105,7 @@ public final class CodigoDeVoto {
         return normalizado != null && normalizado.length() == LARGO;
     }
 
-    /** Agrupa un codigo canonico para enseñarlo: {@code K7M29QX4RT3F} → {@code K7M2-9QX4-RT3F}. */
+    /** Agrupa un codigo canonico para enseñarlo: {@code K7M29QX4} → {@code K7M2-9QX4}. */
     public static String agrupar(String normalizado) {
         if (!tieneForma(normalizado)) {
             return normalizado;

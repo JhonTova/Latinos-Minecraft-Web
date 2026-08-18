@@ -110,7 +110,7 @@ async function Destacados() {
         id="titulo-destacados"
         titulo="Servidores patrocinados"
         etiqueta="Patrocinado"
-        enlace={{ href: "/destacar", texto: "Destacar el mío" }}
+        enlace={{ href: "/panel/destacar", texto: "Destacar el mío" }}
       />
 
       {/* Tarjetas y no filas: son cinco, no cincuenta, y hay sitio para una

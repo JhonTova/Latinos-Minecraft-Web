@@ -37,8 +37,7 @@ export default async function PaginaComprarDestacado(
           Destacar mi servidor
         </h1>
         <p className="mt-1 text-sm text-muted text-pretty">
-          Cinco espacios en la portada, por encima del ranking. Precio cerrado y
-          fecha confirmada antes de pagar.
+          Elige espacio y semana. Ves el precio y las fechas antes de pagar.
         </p>
       </div>
 
@@ -63,10 +62,11 @@ export default async function PaginaComprarDestacado(
         />
       </Tarjeta>
 
+      {/* Esto no es relleno: es lo que el comprador tiene que saber antes de
+          pagar. Su espacio va etiquetado como patrocinado y fuera del ranking. */}
       <p className="mt-4 text-xs text-subtle text-pretty">
-        Los destacados van en un bloque aparte y etiquetados, nunca dentro del
-        ranking. Si las posiciones del ranking se pudieran comprar, dejaría de
-        significar nada y el tráfico que te manda se iría con él.
+        Tu servidor aparece en un bloque aparte, etiquetado como patrocinado, y
+        nunca dentro del ranking.
       </p>
     </main>
   );
