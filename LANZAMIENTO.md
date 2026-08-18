@@ -7,6 +7,7 @@ Ordenada por lo que pasa si te la saltas, no por lo que cuesta hacerla.
 
 ## 🔴 Bloqueante — sin esto no se abre
 
+
 ### 1. Empezar de cero
 
 Durante el desarrollo se creó de todo: cuentas, servidores, votos y un pedido
