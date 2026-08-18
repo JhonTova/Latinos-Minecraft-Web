@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /** Acceso a los datos de organizaciones. Solo el modulo {@code organizations} toca estas tablas. */
 @Repository
@@ -53,6 +54,26 @@ public class OrganizationRepository {
                 .update();
 
         return id;
+    }
+
+    /**
+     * Crea la organizacion personal solo si el usuario todavia no tiene ninguna.
+     *
+     * <p>Existe porque hay mas de una puerta de entrada a la plataforma: el
+     * registro por correo crea la organizacion en el mismo paso, pero quien entra
+     * con Google o Discord no pasa por ahi. Sin esto, esas cuentas se quedaban sin
+     * organizacion y no podian registrar ni un servidor.
+     *
+     * <p>Es idempotente a proposito, y se llama en cada acceso y no solo al crear
+     * la cuenta: asi las cuentas que ya nacieron sin organizacion se reparan solas
+     * la proxima vez que entran, sin tener que tocar la base de datos a mano.
+     */
+    @Transactional
+    public void asegurarOrganizacionPersonal(UUID usuarioId, String nombreUsuario) {
+        if (!organizacionesDe(usuarioId).isEmpty()) {
+            return;
+        }
+        crearOrganizacionPersonal(usuarioId, nombreUsuario);
     }
 
     /** Organizaciones a las que pertenece un usuario, con su rol. */

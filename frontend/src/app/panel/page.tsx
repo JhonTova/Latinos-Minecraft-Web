@@ -28,8 +28,17 @@ export default async function PaginaPanel() {
 
   const org = organizaciones[0];
   const sinLimite = org?.limiteServidores === null;
-  const puedeCrear =
-    sinLimite || (org && org.servidoresUsados < org.limiteServidores!);
+
+  // Se comprueba que el límite existe y está alcanzado, en vez de dar por hecho
+  // que "no puede crear" significa "se le acabó el cupo". Sin organización —que
+  // no debería pasar, pero pasaba— aquí salía un aviso diciéndole al usuario que
+  // había llegado a un límite que ni siquiera tenía, encima de un panel vacío.
+  const alcanzoElLimite =
+    org != null &&
+    org.limiteServidores !== null &&
+    org.servidoresUsados >= org.limiteServidores;
+
+  const puedeCrear = org != null && !alcanzoElLimite;
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:px-6">
@@ -70,10 +79,10 @@ export default async function PaginaPanel() {
         )}
       </div>
 
-      {!puedeCrear && (
+      {alcanzoElLimite && (
         <div className="mb-6">
           <Aviso tono="info">
-            Has llegado al límite de {org?.limiteServidores} servidores del plan
+            Has llegado al límite de {org.limiteServidores} servidores del plan
             gratuito. Con Plus puedes tener los que quieras.
           </Aviso>
         </div>

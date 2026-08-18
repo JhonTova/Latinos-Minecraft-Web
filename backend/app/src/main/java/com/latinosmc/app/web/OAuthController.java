@@ -36,14 +36,20 @@ public class OAuthController {
     private static final String RUTA_EN_LA_WEB = "/api/backend/auth/oauth/";
 
     private final OAuthService oauth;
+    private final com.latinosmc.identity.IdentityRepository identidades;
+    private final com.latinosmc.organizations.OrganizationRepository organizaciones;
     private final String sitioUrl;
     private final boolean cookieSegura;
 
     public OAuthController(
             OAuthService oauth,
+            com.latinosmc.identity.IdentityRepository identidades,
+            com.latinosmc.organizations.OrganizationRepository organizaciones,
             @Value("${latinosmc.sitio-url}") String sitioUrl,
             org.springframework.core.env.Environment entorno) {
         this.oauth = oauth;
+        this.identidades = identidades;
+        this.organizaciones = organizaciones;
         this.sitioUrl = sinBarraFinal(sitioUrl);
         this.cookieSegura = entorno.matchesProfiles("prod");
     }
@@ -101,6 +107,17 @@ public class OAuthController {
                     urlRetorno(proveedor),
                     http.getHeader(HttpHeaders.USER_AGENT),
                     IpDelCliente.de(http));
+
+            // Toda cuenta necesita su organizacion personal, entre por donde entre.
+            // El registro por correo la crea en su propio endpoint; quien entra con
+            // Google o Discord no pasa por alli, y sin esto se quedaba con una
+            // cuenta que no puede registrar ni un servidor.
+            //
+            // Se compone aqui, en la capa de ensamblado, porque los modulos de
+            // dominio no se conocen entre si (ADR-0001).
+            identidades
+                    .buscarPorId(sesion.usuarioId())
+                    .ifPresent(u -> organizaciones.asegurarOrganizacionPersonal(u.id(), u.nombre()));
 
             ResponseCookie sesionCookie = ResponseCookie.from(
                             UsuarioActualResolver.COOKIE_SESION, sesion.token())
