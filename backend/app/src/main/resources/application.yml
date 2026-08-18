@@ -89,14 +89,15 @@ management:
       show-details: when-authorized
 
 latinosmc:
-  # Direccion publica del sitio. Se usa para construir el enlace de voto que el
-  # plugin muestra al jugador tras escribir /vote.
+  # Direccion publica del sitio. Se usa para el enlace de voto que el plugin
+  # muestra al jugador tras escribir /vote, para las redirecciones despues de
+  # entrar y para la URL de retorno de Google y Discord.
+  #
+  # Esa URL de retorno debe coincidir EXACTAMENTE con la que registres en cada
+  # proveedor o rechazaran el acceso:
+  #   <sitio-url>/api/backend/auth/oauth/google/callback
+  #   <sitio-url>/api/backend/auth/oauth/discord/callback
   sitio-url: ${SITIO_URL:http://localhost:3000}
-
-  # Direccion publica de la API. Se usa para construir la URL de retorno de
-  # Google y Discord, que debe coincidir EXACTAMENTE con la que registres en cada
-  # proveedor o rechazaran el acceso.
-  api-url: ${API_URL_PUBLICA:http://localhost:8080}
 
   oauth:
     # Sin credenciales, el proveedor no se ofrece: el boton no aparece. Asi el

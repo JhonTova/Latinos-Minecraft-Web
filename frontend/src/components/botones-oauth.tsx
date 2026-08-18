@@ -1,6 +1,4 @@
 const API = process.env.API_URL ?? "http://localhost:8080/api/v1";
-const API_PUBLICA =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
 
 const PROVEEDORES: Record<string, { nombre: string; icono: React.ReactNode }> = {
   GOOGLE: {
@@ -70,7 +68,12 @@ export async function BotonesOAuth() {
           return (
             <a
               key={codigo}
-              href={`${API_PUBLICA}/auth/oauth/${codigo.toLowerCase()}`}
+              // Ruta relativa a propósito: la dirección del backend no se publica
+              // y el enlace vale igual en local, en pruebas y en producción sin
+              // depender de ninguna variable. Antes se construía con una variable
+              // que nadie definía, así que el botón llevaba al usuario a su propia
+              // máquina.
+              href={`/api/backend/auth/oauth/${codigo.toLowerCase()}`}
               className="flex items-center justify-center gap-2.5 rounded-md border border-border bg-surface px-4 py-2.5 font-medium transition-colors hover:bg-surface-sunken"
             >
               {proveedor.icono}

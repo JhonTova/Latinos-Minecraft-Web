@@ -21,6 +21,12 @@ const API = process.env.API_URL ?? "http://localhost:8080/api/v1";
  */
 const RUTAS_PERMITIDAS: RegExp[] = [
   /^auth\/(registro|login|logout|yo|verificar|reenviar-codigo|sesiones)$/,
+  // Acceso con Google y Discord. Pasa por aquí, y no directamente al backend,
+  // porque la cookie de sesión se guarda para el dominio que responde a la vuelta
+  // del proveedor: si esa vuelta aterrizara en la API, la sesión quedaría en otro
+  // dominio y el usuario volvería a la web sin haber entrado.
+  /^auth\/oauth\/(google|discord)$/,
+  /^auth\/oauth\/(google|discord)\/callback$/,
   /^servers$/,
   /^servers\/(mios|mis-organizaciones|modalidades)$/,
   // Ficha y subida de imágenes de un servidor concreto. El UUID se acota en el
@@ -86,6 +92,14 @@ async function proxy(peticion: NextRequest, ruta: string[]) {
   const cookies = respuesta.headers.getSetCookie?.() ?? [];
   for (const cookie of cookies) {
     cabeceras.append("Set-Cookie", cookie);
+  }
+
+  // Sin esto, una redirección del backend llegaría al navegador sin destino: el
+  // usuario vería una página en blanco. Es lo que mueve el acceso con Google y
+  // Discord, que es una cadena de redirecciones de principio a fin.
+  const destino = respuesta.headers.get("location");
+  if (destino) {
+    cabeceras.set("Location", destino);
   }
 
   // 204 y 304 no pueden llevar cuerpo. Devolver uno —aunque sea vacío— hace que

@@ -75,7 +75,6 @@ services:
       LATINOSMC_IDENTITY_PEPPER: ${LATINOSMC_IDENTITY_PEPPER:?Define LATINOSMC_IDENTITY_PEPPER en el archivo .env}
       LATINOSMC_CORS_ORIGENES: ${SITIO_URL:-http://localhost:3000}
       SITIO_URL: ${SITIO_URL:-http://localhost:3000}
-      API_URL_PUBLICA: ${API_URL_PUBLICA:-http://localhost:8080}
 
       # Vacíos = los botones de Google y Discord no aparecen. El registro por
       # correo funciona igual.

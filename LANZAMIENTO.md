@@ -272,11 +272,12 @@ igual. Cuando los quieras:
 - Google: `console.cloud.google.com` → APIs y servicios → Credenciales
 - Discord: `discord.com/developers/applications` → OAuth2
 
-URL de retorno, exacta o rechazan el acceso:
+URL de retorno, exacta o rechazan el acceso. Es el dominio del **sitio**, no el
+de la API: si no, el usuario termina el proceso sin haber entrado.
 
 ```
-https://api.latinosmc.com/api/v1/auth/oauth/google/callback
-https://api.latinosmc.com/api/v1/auth/oauth/discord/callback
+https://latinosmc.com/api/backend/auth/oauth/google/callback
+https://latinosmc.com/api/backend/auth/oauth/discord/callback
 ```
 
 ### 12. Marca

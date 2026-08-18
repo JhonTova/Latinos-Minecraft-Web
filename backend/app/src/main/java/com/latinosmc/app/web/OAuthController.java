@@ -27,18 +27,23 @@ public class OAuthController {
     /** Corta a proposito: es un ida y vuelta de segundos, no una sesion. */
     private static final Duration VIDA_COOKIE_FLUJO = Duration.ofMinutes(10);
 
+    /**
+     * Ruta por la que la web reenvía estas dos llamadas al backend.
+     *
+     * <p>Está aquí porque la URL de retorno tiene que ser una dirección del sitio,
+     * no de la API. Ver {@link #urlRetorno(String)}.
+     */
+    private static final String RUTA_EN_LA_WEB = "/api/backend/auth/oauth/";
+
     private final OAuthService oauth;
-    private final String apiUrl;
     private final String sitioUrl;
     private final boolean cookieSegura;
 
     public OAuthController(
             OAuthService oauth,
-            @Value("${latinosmc.api-url:http://localhost:8080}") String apiUrl,
             @Value("${latinosmc.sitio-url}") String sitioUrl,
             org.springframework.core.env.Environment entorno) {
         this.oauth = oauth;
-        this.apiUrl = sinBarraFinal(apiUrl);
         this.sitioUrl = sinBarraFinal(sitioUrl);
         this.cookieSegura = entorno.matchesProfiles("prod");
     }
@@ -126,9 +131,16 @@ public class OAuthController {
      * <p>Se construye en el servidor a partir de la configuración, nunca con datos
      * de la petición. Si viniera del cliente, alguien podría hacer que el
      * proveedor devolviera el código de autorización a su propio servidor.
+     *
+     * <p><b>Apunta al sitio, no a la API.</b> La cookie de sesión se guarda para el
+     * dominio que responde a la vuelta del proveedor. Si esta URL apuntara a
+     * {@code api.dominio.com}, la sesión quedaría en ese dominio y la web —que está
+     * en {@code dominio.com}— nunca la vería: el usuario acabaría el flujo entero
+     * sin haber entrado, y sin ningún error que lo explicara. La web reenvía esta
+     * ruta al backend, así que la vuelta aterriza en el dominio correcto.
      */
     private String urlRetorno(String proveedor) {
-        return apiUrl + "/api/v1/auth/oauth/" + proveedor.toLowerCase() + "/callback";
+        return sitioUrl + RUTA_EN_LA_WEB + proveedor.toLowerCase() + "/callback";
     }
 
     private ResponseEntity<Void> redirigirA(String ruta) {
