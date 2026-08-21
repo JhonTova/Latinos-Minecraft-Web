@@ -155,7 +155,16 @@ public class ServerController {
                 detalle.tema(),
                 servidores.modalidadesDe(detalle.id()).stream()
                         .map(com.latinosmc.servers.ServerRepository.Modalidad::codigo)
-                        .toList());
+                        .toList(),
+                new Imagenes(
+                        detalle.iconoAutomatico(),
+                        detalle.bannerAutomatico(),
+                        urlDe(detalle.claveIconoAuto()),
+                        urlDe(detalle.claveBannerAuto()),
+                        urlDe(detalle.claveIconoSubido()),
+                        urlDe(detalle.claveBannerSubido()),
+                        detalle.motdJson(),
+                        detalle.imagenesAutomaticasBloqueadas()));
     }
 
     /** Catalogo de modalidades. Publico: es una lista fija, no revela nada. */
@@ -338,7 +347,34 @@ public class ServerController {
             String versionMaxima,
             String region,
             String tema,
-            List<String> modalidades) {}
+            List<String> modalidades,
+            Imagenes imagenes) {}
+
+    /**
+     * Estado de las imagenes del servidor, para la pantalla que las gestiona
+     * (ADR-0027).
+     *
+     * <p>Va anidado y no como ocho campos sueltos en {@link FichaServidor} porque
+     * es una decision con sus propias reglas —dos origenes, dos versiones de cada
+     * imagen, un bloqueo— y aplanarla la mezclaria con el nombre y la version del
+     * servidor, que no tienen nada que ver.
+     *
+     * <p>Se mandan las cuatro URL, no solo las dos que se enseñan: la pantalla
+     * necesita poner una al lado de la otra para que el dueño elija viendo, no
+     * leyendo la descripcion de dos botones.
+     *
+     * @param motd el MOTD leido del ping, saneado y con su formato; null si el
+     *     servidor no anuncia ninguno o si no se ha sondeado todavia
+     */
+    public record Imagenes(
+            boolean iconoAutomatico,
+            boolean bannerAutomatico,
+            String iconoAutoUrl,
+            String bannerAutoUrl,
+            String iconoSubidoUrl,
+            String bannerSubidoUrl,
+            String motd,
+            boolean bloqueadas) {}
 
     /**
      * @param modalidades codigos del catalogo; los que no existan los rechaza la

@@ -83,7 +83,16 @@ class BajaDeServidorTest {
                 "1.8",
                 "1.21",
                 "España",
-                "DEFECTO");
+                "DEFECTO",
+                // Imagenes automaticas (ADR-0027): irrelevantes para dar de baja.
+                true,
+                true,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false);
     }
 
     @Test

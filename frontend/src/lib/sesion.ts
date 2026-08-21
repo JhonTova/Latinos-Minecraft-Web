@@ -1,3 +1,4 @@
+import type { ImagenesServidor } from "@/components/imagenes-del-servidor";
 import { cookies } from "next/headers";
 
 const API = process.env.API_URL ?? "http://localhost:8080/api/v1";
@@ -78,6 +79,8 @@ export interface FichaServidor {
   tema: string;
   /** Códigos, no nombres: es lo que espera el formulario. */
   modalidades: string[];
+  /** De dónde salen el icono y el banner, y qué hay de cada uno (ADR-0027). */
+  imagenes: ImagenesServidor;
 }
 
 export interface Modalidad {

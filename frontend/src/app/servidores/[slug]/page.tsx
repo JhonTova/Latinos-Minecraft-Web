@@ -4,6 +4,7 @@ import {
   esquemaDeServidor,
 } from "@/components/datos-estructurados";
 import { CopiarIp } from "@/components/copiar-ip";
+import { Motd, textoPlanoDelMotd } from "@/components/motd";
 import { Sparkline } from "@/components/sparkline";
 import { PanelDeVoto } from "@/components/panel-de-voto";
 import { fichaPublica } from "@/lib/api";
@@ -39,6 +40,12 @@ export async function generateMetadata(
       : "Sin conexión ahora mismo";
 
   const descripcion = [
+    // El MOTD delante de la descripción: es lo que el servidor dice de sí mismo
+    // hoy, mientras que la descripción se escribió al darse de alta y casi nadie
+    // vuelve a tocarla. Muchos servidores ni siquiera la rellenan, y para esos
+    // era la diferencia entre un resultado de búsqueda con contenido y uno con
+    // la IP a secas (ADR-0027).
+    textoPlanoDelMotd(servidor.motd) || undefined,
     servidor.descripcion?.trim(),
     `${jugadores} · IP: ${servidor.direccion}`,
   ]
@@ -171,6 +178,20 @@ export default async function PaginaServidor(
             />
           </div>
         </div>
+
+        {/* El MOTD va antes que la descripción: es lo que el servidor dice de sí
+            mismo AHORA, y muchos lo cambian a diario para anunciar eventos. La
+            descripción se escribió una vez al darse de alta y casi nadie vuelve
+            a tocarla.
+
+            Se pinta como texto además de ir dibujado en el banner. No es
+            duplicarlo por gusto: un lector de pantalla no puede leer un PNG, y
+            un buscador tampoco (ADR-0027). */}
+        {servidor.motd && (
+          <div className="entra entra-1 mt-5 rounded-lg border border-border bg-[#26262b] px-4 py-3">
+            <Motd motd={servidor.motd} className="text-white" />
+          </div>
+        )}
 
         {servidor.descripcion && (
           <p className="entra entra-1 mt-5 text-lg leading-relaxed text-muted text-pretty">

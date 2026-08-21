@@ -41,6 +41,7 @@ contradicciones (documentadas abajo). Este archivo es lo que manda.
 | [0024](decisiones/0024-retirada-de-servidores-inactivos.md) | Los servidores que dejan de dar señales se retiran del directorio | ✅ Vigente |
 | [0025](decisiones/0025-paginas-por-categoria.md) | Una página propia por modalidad, no un filtro | ✅ Vigente |
 | [0026](decisiones/0026-codigo-de-voto-de-ocho-caracteres.md) | El código de voto baja a ocho caracteres | ✅ Vigente |
+| [0027](decisiones/0027-imagenes-automaticas-desde-el-ping.md) | Icono y banner automáticos, leídos del ping del servidor | ✅ Vigente |
 
 ---
 

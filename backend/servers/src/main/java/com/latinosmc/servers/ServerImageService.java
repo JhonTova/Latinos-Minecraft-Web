@@ -34,6 +34,54 @@ public class ServerImageService {
         return guardar(servidorId, organizacionId, usuarioId, procesada, "BANNER");
     }
 
+    /**
+     * Devuelve una imagen al modo automatico (ADR-0027).
+     *
+     * <p>No borra lo que subio el dueño: solo deja de enseñarlo. Alguien que pago
+     * a un diseñador y prueba el modo automatico por curiosidad tiene que poder
+     * volver con un clic, y si el cambio destruyera el archivo no habria vuelta.
+     *
+     * @param cual {@code ICON} o {@code BANNER}
+     */
+    @Transactional
+    public void usarImagenAutomatica(UUID servidorId, UUID organizacionId, String cual) {
+        exigirProposito(cual);
+
+        if (servidores.cambiarOrigenDeImagen(servidorId, organizacionId, cual, true) == 0) {
+            throw new DomainException.NotFound(
+                    "server.not_found", "Ese servidor no existe o no puedes gestionarlo.");
+        }
+    }
+
+    /**
+     * Vuelve a la imagen que subio el dueño.
+     *
+     * @param cual {@code ICON} o {@code BANNER}
+     */
+    @Transactional
+    public void usarImagenSubida(UUID servidorId, UUID organizacionId, String cual) {
+        exigirProposito(cual);
+
+        if (servidores.cambiarOrigenDeImagen(servidorId, organizacionId, cual, false) == 0) {
+            throw new DomainException.NotFound(
+                    "server.not_found", "Ese servidor no existe o no puedes gestionarlo.");
+        }
+    }
+
+    /**
+     * Lista blanca de los dos unicos valores admitidos.
+     *
+     * <p>El valor llega desde la API y termina eligiendo un nombre de columna. La
+     * eleccion la hace el repositorio entre dos literales, nunca interpolando lo
+     * que llegue, pero la comprobacion se hace igualmente aqui: dos defensas para
+     * lo mismo cuestan una linea, y una sola equivocada cuesta la base de datos.
+     */
+    private void exigirProposito(String cual) {
+        if (!"ICON".equals(cual) && !"BANNER".equals(cual)) {
+            throw new DomainException.Conflict("image.unknown_purpose", "Esa imagen no existe.");
+        }
+    }
+
     private String guardar(
             UUID servidorId,
             UUID organizacionId,
@@ -74,6 +122,15 @@ public class ServerImageService {
         int filas = "ICON".equals(proposito)
                 ? servidores.actualizarIcono(servidorId, organizacionId, clave)
                 : servidores.actualizarBanner(servidorId, organizacionId, clave);
+
+        // Subir una imagen conmuta esa imagen a manual (ADR-0027). Es lo que
+        // quiere decir alguien que sube un banner, y pedirle un segundo clic para
+        // explicarlo solo produciria gente que sube su banner, no ve ningun cambio
+        // y concluye que la subida no funciona.
+        //
+        // Lo que subio NO pisa lo automatico: viven en columnas distintas, asi que
+        // volver al modo automatico manaña no destruye el archivo de hoy.
+        servidores.cambiarOrigenDeImagen(servidorId, organizacionId, proposito, false);
 
         if (filas == 0) {
             // La condicion por organizacion viaja en el UPDATE. Si no toco ninguna

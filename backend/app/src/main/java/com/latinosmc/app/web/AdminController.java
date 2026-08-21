@@ -46,6 +46,7 @@ public class AdminController {
     private final com.latinosmc.servers.ProcesadorDeImagenes imagenes;
     private final com.latinosmc.shared.ports.FileStorage almacen;
     private final com.latinosmc.voting.VoteSettingsRepository reglasDeVoto;
+    private final com.latinosmc.servers.ServerRepository servidores;
 
     public AdminController(
             PlatformAdminRepository administradores,
@@ -54,6 +55,7 @@ public class AdminController {
             com.latinosmc.voting.VoteSettingsRepository reglasDeVoto,
             com.latinosmc.organizations.SiteSettingsRepository sitio,
             com.latinosmc.servers.ProcesadorDeImagenes imagenes,
+            com.latinosmc.servers.ServerRepository servidores,
             com.latinosmc.shared.ports.FileStorage almacen) {
         this.administradores = administradores;
         this.facturacion = facturacion;
@@ -61,6 +63,7 @@ public class AdminController {
         this.reglasDeVoto = reglasDeVoto;
         this.sitio = sitio;
         this.imagenes = imagenes;
+        this.servidores = servidores;
         this.almacen = almacen;
     }
 
@@ -398,6 +401,58 @@ public class AdminController {
         exigirAdministrador(usuario);
         return administradores.administradores();
     }
+
+    /**
+     * Retira las imagenes automaticas de un servidor (ADR-0027).
+     *
+     * <p>Es la contrapartida de adoptar contenido de terceros al instante. Alguien
+     * pone algo que no debe de icono o de MOTD y esto lo quita: el servidor vuelve
+     * al marcador de posicion y no se le readopta nada mas, aunque cambie el
+     * favicon al minuto siguiente.
+     *
+     * <p>No suspende el servidor ni le quita los votos. Es una medida sobre las
+     * imagenes, no sobre el servidor; para lo otro esta la suspension.
+     */
+    @PostMapping("/servidores/{servidorId}/imagenes-automaticas/bloquear")
+    public Map<String, Object> bloquearImagenesAutomaticas(
+            @UsuarioActual IdentityRepository.Usuario usuario,
+            @PathVariable java.util.UUID servidorId,
+            @RequestBody(required = false) PeticionBloqueo peticion) {
+
+        exigirAdministrador(usuario);
+
+        String motivo = peticion == null || peticion.motivo() == null || peticion.motivo().isBlank()
+                ? "Retirado por un administrador"
+                : peticion.motivo().trim();
+
+        int filas = servidores.bloquearImagenesAutomaticas(servidorId, motivo.substring(0, Math.min(motivo.length(), 300)));
+
+        // Se registra siempre: es una accion de moderacion sobre contenido ajeno y
+        // tiene que poder reconstruirse quien la tomo y cuando.
+        log.warn(
+                "El administrador {} bloqueo las imagenes automaticas del servidor {}: {}",
+                usuario.id(),
+                servidorId,
+                motivo);
+
+        return Map.of("bloqueado", filas > 0);
+    }
+
+    @PostMapping("/servidores/{servidorId}/imagenes-automaticas/desbloquear")
+    public Map<String, Object> desbloquearImagenesAutomaticas(
+            @UsuarioActual IdentityRepository.Usuario usuario, @PathVariable java.util.UUID servidorId) {
+
+        exigirAdministrador(usuario);
+        int filas = servidores.desbloquearImagenesAutomaticas(servidorId);
+        log.warn(
+                "El administrador {} desbloqueo las imagenes automaticas del servidor {}",
+                usuario.id(),
+                servidorId);
+
+        return Map.of("desbloqueado", filas > 0);
+    }
+
+    public record PeticionBloqueo(String motivo) {}
 
     private void exigirAdministrador(IdentityRepository.Usuario usuario) {
         if (!administradores.esAdministrador(usuario.id())) {

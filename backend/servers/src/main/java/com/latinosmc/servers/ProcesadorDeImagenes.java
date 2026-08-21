@@ -43,6 +43,44 @@ public class ProcesadorDeImagenes {
     /** Lado maximo del logotipo del sitio. Se enseña grande en la portada. */
     public static final int LOGO_LADO = 512;
 
+    /**
+     * Lado del icono que anuncia un servidor en su ping.
+     *
+     * <p>El protocolo lo fija en 64x64 y el cliente del juego rechaza cualquier
+     * otra cosa. Se reprocesa a ese tamaño exacto para que el aspecto pixelado sea
+     * el mismo que en el menu multijugador (ADR-0027).
+     */
+    public static final int FAVICON_LADO = 64;
+
+    /**
+     * Tope del icono que llega por el ping.
+     *
+     * <p>Mucho mas estrecho que el de una subida: un icono de 64x64 en PNG no pasa
+     * de unos 16 KB ni siendo ruido puro. Lo que llegue por encima de esto no es un
+     * icono de servidor.
+     */
+    public static final long MAX_FAVICON_BYTES = 64 * 1024;
+
+    /**
+     * Tope de dimensiones ANTES de decodificar.
+     *
+     * <p>Esto no es una comodidad, es lo que impide una bomba de descompresion. Un
+     * PNG de treinta kilobytes puede declarar 30000x30000 pixeles y ser un
+     * rectangulo de un solo color: se comprime a nada y se descomprime a 3,6 GB.
+     * Al decodificarlo, Java reserva la trama entera antes de que nadie pueda
+     * mirar su tamaño, y el proceso muere.
+     *
+     * <p>Por eso la cabecera se lee primero y se rechaza por dimensiones sin
+     * llegar a decodificar ni un pixel. El limite de bytes del archivo no protege
+     * de esto: precisamente el ataque consiste en que el archivo sea diminuto.
+     *
+     * <p>Diecisiete megapixeles dan de sobra: una foto de movil de 12 MP
+     * (4000x3000) entra sin problema.
+     */
+    private static final int LADO_MAXIMO_ENTRADA = 6000;
+
+    private static final long PIXELES_MAXIMOS_ENTRADA = 17_000_000L;
+
     /** Proporcion 1.91:1, la que esperan Discord, WhatsApp, Twitter y Facebook. */
     public static final int SOCIAL_ANCHO = 1200;
 
@@ -108,6 +146,26 @@ public class ProcesadorDeImagenes {
         BufferedImage imagen = decodificar(original);
         BufferedImage ajustada = ajustarADentroDe(imagen, LOGO_LADO, LOGO_LADO);
         return new Resultado(codificarPng(ajustada), "image/png", ajustada.getWidth(), ajustada.getHeight());
+    }
+
+    /**
+     * Icono leido del ping de un servidor (ADR-0027).
+     *
+     * <p>Pasa por el mismo reprocesado que una subida, y no es una formalidad:
+     * estos bytes los controla el dueño del servidor —que es justo quien tendria
+     * el incentivo para abusar— y acabarian servidos desde nuestro dominio. Venir
+     * "de un ping" y no "de un formulario" no lo hace mas de fiar; si acaso, menos,
+     * porque nadie ha pulsado un boton para enviarlo.
+     *
+     * <p>Se reprocesa a 64x64 exactos, que es lo que fija el protocolo, y no a los
+     * 128 del icono subido: ampliar 64 a 128 solo produce una imagen borrosa.
+     */
+    public Resultado procesarFavicon(byte[] original) {
+        exigirTamano(original, MAX_FAVICON_BYTES, "El icono del servidor es demasiado grande.");
+
+        BufferedImage imagen = decodificar(original);
+        BufferedImage cuadrada = redimensionar(imagen, FAVICON_LADO, FAVICON_LADO);
+        return new Resultado(codificarPng(cuadrada), "image/png", FAVICON_LADO, FAVICON_LADO);
     }
 
     /**
@@ -184,6 +242,8 @@ public class ProcesadorDeImagenes {
             throw new DomainException.Conflict(
                     "image.unsupported", "Formato no admitido. Usa PNG, JPG, WebP o GIF.");
         }
+        exigirDimensionesRazonables(datos);
+
         try {
             BufferedImage imagen = ImageIO.read(new ByteArrayInputStream(datos));
             if (imagen == null) {
@@ -191,6 +251,51 @@ public class ProcesadorDeImagenes {
                         "image.unreadable", "No hemos podido leer esa imagen. Prueba con otra.");
             }
             return imagen;
+        } catch (IOException e) {
+            throw new DomainException.Conflict("image.unreadable", "No hemos podido leer esa imagen.");
+        }
+    }
+
+    /**
+     * Lee la cabecera y rechaza por tamaño sin decodificar los pixeles.
+     *
+     * <p>Va antes de {@link ImageIO#read}: si se hiciera despues, la memoria ya
+     * estaria reservada y la comprobacion llegaria tarde. Ver
+     * {@link #LADO_MAXIMO_ENTRADA}.
+     */
+    private void exigirDimensionesRazonables(byte[] datos) {
+        try (javax.imageio.stream.ImageInputStream flujo =
+                ImageIO.createImageInputStream(new ByteArrayInputStream(datos))) {
+
+            if (flujo == null) {
+                throw new DomainException.Conflict(
+                        "image.unreadable", "No hemos podido leer esa imagen.");
+            }
+
+            var lectores = ImageIO.getImageReaders(flujo);
+            if (!lectores.hasNext()) {
+                throw new DomainException.Conflict(
+                        "image.unsupported", "Formato no admitido. Usa PNG, JPG, WebP o GIF.");
+            }
+
+            javax.imageio.ImageReader lector = lectores.next();
+            try {
+                lector.setInput(flujo);
+                long ancho = lector.getWidth(0);
+                long alto = lector.getHeight(0);
+
+                if (ancho > LADO_MAXIMO_ENTRADA
+                        || alto > LADO_MAXIMO_ENTRADA
+                        || ancho * alto > PIXELES_MAXIMOS_ENTRADA) {
+                    throw new DomainException.Conflict(
+                            "image.dimensions_too_large",
+                            "Esa imagen es demasiado grande: " + ancho + "x" + alto
+                                    + " píxeles. El máximo es " + LADO_MAXIMO_ENTRADA + " por lado.");
+                }
+            } finally {
+                lector.dispose();
+            }
+
         } catch (IOException e) {
             throw new DomainException.Conflict("image.unreadable", "No hemos podido leer esa imagen.");
         }

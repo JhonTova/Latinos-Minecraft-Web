@@ -81,7 +81,9 @@ public class PingMinecraft {
                     entero(jugadores, "online"),
                     entero(jugadores, "max"),
                     latenciaMs,
-                    datos.path("version").path("name").asText(null));
+                    datos.path("version").path("name").asText(null),
+                    decodificarFavicon(datos.path("favicon")),
+                    datos.get("description"));
 
         } catch (IOException | RuntimeException e) {
             // Caido, filtrado, cambiado de IP, o simplemente apagado. Todo eso es
@@ -193,6 +195,41 @@ public class PingMinecraft {
         salida.write(bytes);
     }
 
+    /**
+     * Saca los bytes del icono que anuncia el servidor.
+     *
+     * <p>Viene como URL de datos: {@code data:image/png;base64,iVBORw0...}. Es el
+     * mismo icono que enseña el menu multijugador, y con el se monta la ficha del
+     * servidor sin que su dueño suba nada (ADR-0027).
+     *
+     * <p>Aqui solo se descodifica el base64. Que sea de verdad un PNG, que no sea
+     * una bomba de descompresion y que acabe teniendo 64x64 lo decide
+     * {@code ProcesadorDeImagenes}, igual que con cualquier archivo subido: esto
+     * llega por un socket desde una maquina ajena y no merece mas confianza que un
+     * formulario.
+     *
+     * @return los bytes, o null si el servidor no anuncia icono o lo anuncia mal
+     */
+    private byte[] decodificarFavicon(JsonNode nodo) {
+        if (nodo == null || !nodo.isTextual()) {
+            return null;
+        }
+        String valor = nodo.asText();
+        int coma = valor.indexOf(',');
+        if (coma < 0 || !valor.regionMatches(true, 0, "data:image/", 0, 11)) {
+            return null;
+        }
+
+        try {
+            // Sin espacios ni saltos: algunos servidores parten la cadena en lineas
+            // y el descodificador estricto la rechazaria entera por eso.
+            String base64 = valor.substring(coma + 1).replaceAll("\\s", "");
+            return java.util.Base64.getDecoder().decode(base64);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
     private Integer entero(JsonNode nodo, String campo) {
         JsonNode valor = nodo.get(campo);
         return valor == null || !valor.isNumber() ? null : valor.asInt();
@@ -210,6 +247,11 @@ public class PingMinecraft {
      * @param jugadoresConectados null si el servidor no lo informa
      * @param version texto que anuncia el servidor. Informativo: es autorreportado
      *     y no se usa para el ranking.
+     * @param favicon bytes del icono que anuncia el servidor, sin validar todavia;
+     *     null si no anuncia ninguno
+     * @param descripcion el MOTD tal cual llego, sin interpretar; null si no lo
+     *     anuncia. Se guarda el nodo crudo a proposito: interpretarlo aqui meteria
+     *     en el sondeador logica de presentacion que no es suya
      */
     public record Resultado(
             boolean enLinea,
@@ -217,14 +259,22 @@ public class PingMinecraft {
             Integer jugadoresMaximos,
             Integer latenciaMs,
             String version,
-            String error) {
+            String error,
+            byte[] favicon,
+            JsonNode descripcion) {
 
-        static Resultado enLinea(Integer conectados, Integer maximos, int latencia, String version) {
-            return new Resultado(true, conectados, maximos, latencia, version, null);
+        static Resultado enLinea(
+                Integer conectados,
+                Integer maximos,
+                int latencia,
+                String version,
+                byte[] favicon,
+                JsonNode descripcion) {
+            return new Resultado(true, conectados, maximos, latencia, version, null, favicon, descripcion);
         }
 
-        static Resultado sinConexion(String error) {
-            return new Resultado(false, null, null, null, null, error);
+        public static Resultado sinConexion(String error) {
+            return new Resultado(false, null, null, null, null, error, null, null);
         }
     }
 }

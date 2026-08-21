@@ -139,7 +139,7 @@ public class BillingRepository {
         return jdbc.sql(
                         """
                         SELECT b.slot_position, s.id AS server_id, s.slug, s.name, s.description,
-                               s.icon_key, s.banner_key, s.host, s.port,
+                               s.display_icon_key, s.display_banner_key, s.host, s.port,
                                s.version_min, s.version_max, s.hosting_region, b.ends_at
                           FROM slot_bookings b
                           JOIN servers s ON s.id = b.server_id
@@ -157,8 +157,8 @@ public class BillingRepository {
                         rs.getString("slug"),
                         rs.getString("name"),
                         rs.getString("description"),
-                        rs.getString("icon_key"),
-                        rs.getString("banner_key"),
+                        rs.getString("display_icon_key"),
+                        rs.getString("display_banner_key"),
                         rs.getString("host"),
                         rs.getObject("port", Integer.class),
                         rs.getString("version_min"),

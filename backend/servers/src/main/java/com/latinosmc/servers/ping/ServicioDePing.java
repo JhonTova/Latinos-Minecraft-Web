@@ -1,6 +1,7 @@
 package com.latinosmc.servers.ping;
 
 import com.latinosmc.servers.ServerRepository;
+import com.latinosmc.servers.imagenes.ImagenesAutomaticasService;
 import com.latinosmc.shared.Ids;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -41,12 +42,17 @@ public class ServicioDePing {
     private final ServerRepository servidores;
     private final PingMinecraft ping;
     private final DireccionesPermitidas direcciones;
+    private final ImagenesAutomaticasService imagenes;
 
     public ServicioDePing(
-            ServerRepository servidores, PingMinecraft ping, DireccionesPermitidas direcciones) {
+            ServerRepository servidores,
+            PingMinecraft ping,
+            DireccionesPermitidas direcciones,
+            ImagenesAutomaticasService imagenes) {
         this.servidores = servidores;
         this.ping = ping;
         this.direcciones = direcciones;
+        this.imagenes = imagenes;
     }
 
     @Scheduled(fixedDelayString = "${latinosmc.ping.intervalo-ms:60000}")
@@ -90,7 +96,7 @@ public class ServicioDePing {
         var direccion = direcciones.resolverSiEsSegura(servidor.host());
 
         PingMinecraft.Resultado resultado = direccion == null
-                ? new PingMinecraft.Resultado(false, null, null, null, null, "direccion no sondeable")
+                ? PingMinecraft.Resultado.sinConexion("direccion no sondeable")
                 : ping.sondear(direccion, servidor.puerto(), servidor.host());
 
         try {
@@ -105,6 +111,21 @@ public class ServicioDePing {
                     resultado.error());
         } catch (RuntimeException e) {
             log.warn("No se pudo guardar el sondeo de {}: {}", servidor.host(), e.getMessage());
+        }
+
+        // La misma respuesta trae el icono y el MOTD del servidor. Con ellos se
+        // arma su ficha sin que su dueño suba nada (ADR-0027).
+        //
+        // En su propio try: el trabajo de verdad de esta ronda es medir jugadores
+        // conectados, que es lo unico que alimenta el ranking. Un banner que no se
+        // pudo generar no puede costarle esa medicion a nadie.
+        try {
+            imagenes.actualizar(servidor.id(), resultado, false);
+        } catch (RuntimeException e) {
+            log.warn(
+                    "No se pudieron actualizar las imagenes automaticas de {}: {}",
+                    servidor.host(),
+                    e.toString());
         }
     }
 }

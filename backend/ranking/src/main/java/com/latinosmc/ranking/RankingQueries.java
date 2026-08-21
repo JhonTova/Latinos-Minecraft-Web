@@ -57,8 +57,11 @@ public class RankingQueries {
                                s.slug,
                                s.name          AS nombre,
                                s.description   AS descripcion,
-                               s.icon_key      AS icono,
-                               s.banner_key    AS banner,
+                               -- Calculadas por la base de datos: resuelven solas si
+                               -- la imagen es la que subio el dueño o la que sacamos
+                               -- de su ping (ADR-0027).
+                               s.display_icon_key   AS icono,
+                               s.display_banner_key AS banner,
                                s.host          AS host,
                                s.port          AS puerto,
                                COUNT(v.id)     AS votos,
@@ -83,7 +86,7 @@ public class RankingQueries {
                                              FROM server_game_modes m
                                             WHERE m.server_id = s.id
                                               AND m.mode_code = :modalidad))
-                         GROUP BY s.id, s.slug, s.name, s.description, s.icon_key, s.banner_key,
+                         GROUP BY s.id, s.slug, s.name, s.description, s.display_icon_key, s.display_banner_key,
                                   s.host, s.port, p.players_online, p.is_online
                          ORDER BY votos DESC, s.name ASC
                          LIMIT :limite

@@ -79,7 +79,8 @@ public class DirectorioController {
                         servidores.modalidadesDe(servidor.id()).stream()
                                 .map(com.latinosmc.servers.ServerRepository.Modalidad::nombre)
                                 .toList(),
-                        ranking.tendenciaDiaria(servidor.id(), 7)));
+                        ranking.tendenciaDiaria(servidor.id(), 7),
+                        servidor.motdJson()));
     }
 
     private String urlDe(String clave) {
@@ -110,5 +111,14 @@ public class DirectorioController {
             String region,
             String tema,
             List<String> modalidades,
-            List<Long> tendencia) {}
+            List<Long> tendencia,
+            /**
+             * MOTD leido del ping, saneado, en el formato de {@code MotdJson}
+             * (ADR-0027).
+             *
+             * <p>Se manda ademas del banner porque la ficha lo pinta tambien como
+             * texto: un lector de pantalla no puede leer un PNG, y el buscador
+             * tampoco. Null si el servidor no anuncia ninguno.
+             */
+            String motd) {}
 }

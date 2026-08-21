@@ -26,6 +26,14 @@ export interface FichaPublica {
   /** Aforo, medido por nosotros con el ping. */
   jugadoresMaximo: number | null;
   tendencia: number[];
+  /**
+   * El MOTD que anuncia el servidor, leído de su ping y saneado (ADR-0027).
+   *
+   * En el formato de `MotdJson`; lo pinta el componente `Motd`. Va además del
+   * banner porque un lector de pantalla no puede leer un PNG y un buscador
+   * tampoco.
+   */
+  motd: string | null;
 }
 
 /** Ficha pública de un servidor. Devuelve `null` si no existe o no está activo. */

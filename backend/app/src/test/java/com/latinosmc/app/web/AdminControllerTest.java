@@ -69,6 +69,7 @@ class AdminControllerTest {
                 reglasDeVoto,
                 sitio,
                 mock(com.latinosmc.servers.ProcesadorDeImagenes.class),
+                mock(com.latinosmc.servers.ServerRepository.class),
                 mock(com.latinosmc.shared.ports.FileStorage.class));
 
         when(administradores.esAdministrador(CUALQUIERA.id())).thenReturn(false);

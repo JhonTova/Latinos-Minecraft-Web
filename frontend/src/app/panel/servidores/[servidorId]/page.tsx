@@ -1,7 +1,7 @@
 import { CopiarIp } from "@/components/copiar-ip";
 import { DarDeBaja } from "@/components/dar-de-baja";
 import { EditorDeFicha } from "@/components/editor-de-ficha";
-import { SubirImagen } from "@/components/subir-imagen";
+import { ImagenesDelServidor } from "@/components/imagenes-del-servidor";
 import { Aviso } from "@/components/ui";
 import { catalogoDeModalidades, fichaServidor } from "@/lib/sesion";
 import type { Metadata } from "next";
@@ -93,20 +93,12 @@ export default async function PaginaServidor(
       <div className="space-y-6">
         <Seccion
           titulo="Imágenes"
-          descripcion="El icono se ve en el ranking; el banner, en tu ficha y al compartir el enlace."
+          descripcion="El icono se ve en el ranking; el banner, en tu ficha y al compartir el enlace. Podemos cogerlos de tu servidor o los subes tú."
         >
-          <div className="grid gap-6 sm:grid-cols-2">
-            <SubirImagen
-              servidorId={servidor.id}
-              tipo="icono"
-              urlActual={servidor.iconoUrl}
-            />
-            <SubirImagen
-              servidorId={servidor.id}
-              tipo="banner"
-              urlActual={servidor.bannerUrl}
-            />
-          </div>
+          <ImagenesDelServidor
+            servidorId={servidor.id}
+            imagenes={servidor.imagenes}
+          />
 
           <p className="mt-5 text-xs text-subtle text-pretty">
             Formatos aceptados: PNG, JPG, WebP y GIF. Reprocesamos todo lo que

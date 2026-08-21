@@ -243,6 +243,162 @@ public class ServerRepository {
                 .update();
     }
 
+    // --- Imagenes automaticas (ADR-0027) -------------------------------------
+
+    /**
+     * Lo que hace falta saber, tras un sondeo, para decidir si se readoptan las
+     * imagenes de un servidor.
+     */
+    public Optional<EstadoDeImagenesAutomaticas> estadoDeImagenesAutomaticas(UUID servidorId) {
+        return jdbc.sql(
+                        """
+                        SELECT organization_id, name, host,
+                               icon_source, banner_source,
+                               motd_hash, favicon_hash,
+                               icon_key_auto, banner_key_auto,
+                               auto_images_updated_at,
+                               auto_images_blocked_at
+                          FROM servers
+                         WHERE id = :id AND deleted_at IS NULL
+                        """)
+                .param("id", servidorId)
+                .query((rs, fila) -> new EstadoDeImagenesAutomaticas(
+                        rs.getObject("organization_id", UUID.class),
+                        rs.getString("name"),
+                        rs.getString("host"),
+                        "AUTO".equals(rs.getString("icon_source")),
+                        "AUTO".equals(rs.getString("banner_source")),
+                        rs.getString("motd_hash"),
+                        rs.getString("favicon_hash"),
+                        rs.getString("icon_key_auto"),
+                        rs.getString("banner_key_auto"),
+                        rs.getTimestamp("auto_images_updated_at") == null
+                                ? null
+                                : rs.getTimestamp("auto_images_updated_at").toInstant(),
+                        rs.getTimestamp("auto_images_blocked_at") != null))
+                .optional();
+    }
+
+    /**
+     * Guarda lo adoptado del ping.
+     *
+     * <p>Las claves se pasan siempre, tambien cuando no cambian: el llamador ya
+     * sabe cual es la vigente de cada una y mandar dos UPDATE distintos segun que
+     * haya cambiado solo abriria la puerta a dejar la fila a medias.
+     */
+    public int guardarImagenesAutomaticas(
+            UUID servidorId,
+            String claveIcono,
+            String claveBanner,
+            String motdJson,
+            String hashMotd,
+            String hashFavicon) {
+
+        return jdbc.sql(
+                        """
+                        UPDATE servers
+                           SET icon_key_auto          = :icono,
+                               banner_key_auto        = :banner,
+                               motd_json              = :motd,
+                               motd_hash              = :hashMotd,
+                               favicon_hash           = :hashFavicon,
+                               auto_images_updated_at = now(),
+                               updated_at             = now()
+                         WHERE id = :id
+                           AND deleted_at IS NULL
+                           AND auto_images_blocked_at IS NULL
+                        """)
+                .param("id", servidorId)
+                .param("icono", claveIcono)
+                .param("banner", claveBanner)
+                .param("motd", motdJson)
+                .param("hashMotd", hashMotd)
+                .param("hashFavicon", hashFavicon)
+                .update();
+    }
+
+    /** Cambia el origen de una imagen entre automatico y subido por el dueño. */
+    public int cambiarOrigenDeImagen(
+            UUID servidorId, UUID organizacionId, String cual, boolean automatico) {
+
+        String columna = "ICON".equals(cual) ? "icon_source" : "banner_source";
+
+        // El nombre de columna no viene de fuera: se elige aqui entre dos literales
+        // segun un valor que el llamador ya ha validado. Interpolar lo que llegue
+        // por la API en una consulta seria inyeccion de SQL, y ni con lista blanca
+        // conviene acostumbrarse; por eso la eleccion es de este metodo y no del
+        // que llama.
+        return jdbc.sql(
+                        """
+                        UPDATE servers SET %s = :origen, updated_at = now()
+                         WHERE id = :id AND organization_id = :org AND deleted_at IS NULL
+                        """
+                                .formatted(columna))
+                .param("id", servidorId)
+                .param("org", organizacionId)
+                .param("origen", automatico ? "AUTO" : "MANUAL")
+                .update();
+    }
+
+    /**
+     * Bloquea las imagenes automaticas de un servidor y borra las que hubiera.
+     *
+     * <p>Es la retirada del ADR-0027: adoptamos contenido de terceros al instante,
+     * y esto es lo que lo deshace cuando alguien pone algo que no debe. Deja las
+     * claves a nulo ademas de marcar el bloqueo, para que ninguna consulta del
+     * directorio tenga que acordarse de mirar si esta bloqueado.
+     */
+    public int bloquearImagenesAutomaticas(UUID servidorId, String motivo) {
+        return jdbc.sql(
+                        """
+                        UPDATE servers
+                           SET auto_images_blocked_at     = now(),
+                               auto_images_blocked_reason = :motivo,
+                               icon_key_auto              = NULL,
+                               banner_key_auto            = NULL,
+                               motd_json                  = NULL,
+                               motd_hash                  = NULL,
+                               favicon_hash               = NULL,
+                               updated_at                 = now()
+                         WHERE id = :id AND deleted_at IS NULL
+                        """)
+                .param("id", servidorId)
+                .param("motivo", motivo)
+                .update();
+    }
+
+    public int desbloquearImagenesAutomaticas(UUID servidorId) {
+        return jdbc.sql(
+                        """
+                        UPDATE servers
+                           SET auto_images_blocked_at     = NULL,
+                               auto_images_blocked_reason = NULL,
+                               auto_images_updated_at     = NULL,
+                               updated_at                 = now()
+                         WHERE id = :id AND deleted_at IS NULL
+                        """)
+                .param("id", servidorId)
+                .update();
+    }
+
+    /**
+     * @param iconoAutomatico si el icono sale del ping o lo subio el dueño
+     * @param hashMotd hash del MOTD ya saneado la ultima vez que se adopto
+     * @param actualizadoEn null si nunca se ha adoptado nada
+     */
+    public record EstadoDeImagenesAutomaticas(
+            UUID organizacionId,
+            String nombre,
+            String host,
+            boolean iconoAutomatico,
+            boolean bannerAutomatico,
+            String hashMotd,
+            String hashFavicon,
+            String claveIconoAuto,
+            String claveBannerAuto,
+            Instant actualizadoEn,
+            boolean bloqueado) {}
+
     // --- Sondeo directo (ADR-0009) -------------------------------------------
 
     /**
@@ -325,7 +481,9 @@ public class ServerRepository {
                         """
                         SELECT s.id, s.slug, s.name, s.description, s.host, s.port,
                                s.accepts_unverifiable_identities,
-                               s.icon_key, s.banner_key,
+                               -- Columnas calculadas: la regla de que imagen se
+                               -- enseña vive en la base de datos (ADR-0027).
+                               s.display_icon_key, s.display_banner_key, s.motd_json,
                                s.version_min, s.version_max, s.hosting_region, s.theme_code,
                                p.players_online, p.players_max, p.is_online,
                                (SELECT COUNT(*) FROM votes v
@@ -360,8 +518,9 @@ public class ServerRepository {
                             rs.getString("description"),
                             direccion,
                             rs.getBoolean("accepts_unverifiable_identities"),
-                            rs.getString("icon_key"),
-                            rs.getString("banner_key"),
+                            rs.getString("display_icon_key"),
+                            rs.getString("display_banner_key"),
+                            rs.getString("motd_json"),
                             rs.getObject("players_online", Integer.class),
                             rs.getObject("players_max", Integer.class),
                             rs.getBoolean("is_online"),
@@ -383,6 +542,8 @@ public class ServerRepository {
             boolean aceptaOffline,
             String claveIcono,
             String claveBanner,
+            /** MOTD leido del ping, ya saneado. Null si el servidor no anuncia ninguno. */
+            String motdJson,
             Integer jugadoresConectados,
             Integer jugadoresMaximo,
             boolean enLinea,
@@ -619,8 +780,16 @@ public class ServerRepository {
                         """
                         SELECT id, organization_id, slug, name, description, status_code,
                                host, port, accepts_unverifiable_identities,
-                               icon_key, banner_key, verified_at,
-                               version_min, version_max, hosting_region, theme_code
+                               display_icon_key, display_banner_key, verified_at,
+                               version_min, version_max, hosting_region, theme_code,
+                               -- El panel, a diferencia del directorio, si necesita
+                               -- ver los dos origenes por separado: el dueño tiene
+                               -- que poder comparar lo automatico con lo que subio
+                               -- antes de decidir con cual se queda (ADR-0027).
+                               icon_source, banner_source,
+                               icon_key, banner_key,
+                               icon_key_auto, banner_key_auto,
+                               motd_json, auto_images_blocked_at
                           FROM servers
                          WHERE id = :id AND deleted_at IS NULL
                         """)
@@ -635,16 +804,30 @@ public class ServerRepository {
                         rs.getString("host"),
                         rs.getInt("port"),
                         rs.getBoolean("accepts_unverifiable_identities"),
-                        rs.getString("icon_key"),
-                        rs.getString("banner_key"),
+                        rs.getString("display_icon_key"),
+                        rs.getString("display_banner_key"),
                         rs.getTimestamp("verified_at") != null,
                         rs.getString("version_min"),
                         rs.getString("version_max"),
                         rs.getString("hosting_region"),
-                        rs.getString("theme_code")))
+                        rs.getString("theme_code"),
+                        "AUTO".equals(rs.getString("icon_source")),
+                        "AUTO".equals(rs.getString("banner_source")),
+                        rs.getString("icon_key"),
+                        rs.getString("banner_key"),
+                        rs.getString("icon_key_auto"),
+                        rs.getString("banner_key_auto"),
+                        rs.getString("motd_json"),
+                        rs.getTimestamp("auto_images_blocked_at") != null))
                 .optional();
     }
 
+    /**
+     * @param claveIcono la que se enseña, ya resuelta segun el origen
+     * @param iconoAutomatico si el icono sale del ping o lo subio el dueño
+     * @param claveIconoSubido lo que subio el dueño, exista o no; el panel lo
+     *     necesita para poder ofrecer "volver a mi imagen" sin haberla perdido
+     */
     public record DetalleServidor(
             UUID id,
             UUID organizacionId,
@@ -661,7 +844,15 @@ public class ServerRepository {
             String versionMinima,
             String versionMaxima,
             String region,
-            String tema) {}
+            String tema,
+            boolean iconoAutomatico,
+            boolean bannerAutomatico,
+            String claveIconoSubido,
+            String claveBannerSubido,
+            String claveIconoAuto,
+            String claveBannerAuto,
+            String motdJson,
+            boolean imagenesAutomaticasBloqueadas) {}
 
     /**
      * Actualiza lo que el dueño puede cambiar de su ficha.
