@@ -51,6 +51,26 @@ public class RankingQueries {
      * @param modalidad codigo del catalogo, o {@code null} para no filtrar
      */
     public List<FilaRanking> ranking(int dias, int limite, String modalidad) {
+        return ranking(dias, limite, modalidad, null, null);
+    }
+
+    /**
+     * El ranking con todos sus filtros.
+     *
+     * <p><strong>{@code soloPremium} es el que sostiene las dos clasificaciones
+     * separadas</strong> (ADR-0030). No es un filtro cosmetico: en offline-mode
+     * la identidad del votante no es debil, es que no existe —se vota escribiendo
+     * un nombre— y comparar los dos mundos en una sola tabla haria que el ranking
+     * midiera lo facil que es falsificar votos y no donde apetece jugar.
+     *
+     * @param soloPremium true para servidores que solo admiten cuentas
+     *     originales, false para los que admiten tambien no premium, null para
+     *     no separar
+     * @param bedrock true para quedarse solo con los que aceptan movil y consola;
+     *     null para no filtrar
+     */
+    public List<FilaRanking> ranking(
+            int dias, int limite, String modalidad, Boolean soloPremium, Boolean bedrock) {
         return jdbc.sql(
                         """
                         SELECT s.id,
@@ -64,6 +84,8 @@ public class RankingQueries {
                                s.display_banner_key AS banner,
                                s.host          AS host,
                                s.port          AS puerto,
+                               s.accepts_unverifiable_identities AS acepta_no_premium,
+                               s.supports_bedrock                AS bedrock,
                                COUNT(v.id)     AS votos,
                                p.players_online,
                                p.is_online
@@ -86,14 +108,22 @@ public class RankingQueries {
                                              FROM server_game_modes m
                                             WHERE m.server_id = s.id
                                               AND m.mode_code = :modalidad))
+                           -- Las dos clasificaciones separadas (ADR-0030).
+                           AND (CAST(:soloPremium AS BOOLEAN) IS NULL
+                                OR s.accepts_unverifiable_identities <> :soloPremium)
+                           AND (CAST(:bedrock AS BOOLEAN) IS NULL
+                                OR s.supports_bedrock = :bedrock)
                          GROUP BY s.id, s.slug, s.name, s.description, s.display_icon_key, s.display_banner_key,
-                                  s.host, s.port, p.players_online, p.is_online
+                                  s.host, s.port, s.accepts_unverifiable_identities, s.supports_bedrock,
+                                  p.players_online, p.is_online
                          ORDER BY votos DESC, s.name ASC
                          LIMIT :limite
                         """)
                 .param("dias", dias)
                 .param("limite", limite)
                 .param("modalidad", modalidad)
+                .param("soloPremium", soloPremium)
+                .param("bedrock", bedrock)
                 .query((rs, fila) -> new FilaRanking(
                         rs.getObject("id", UUID.class),
                         rs.getString("slug"),
@@ -105,7 +135,9 @@ public class RankingQueries {
                         rs.getObject("puerto", Integer.class),
                         rs.getLong("votos"),
                         rs.getObject("players_online", Integer.class),
-                        rs.getObject("is_online", Boolean.class)))
+                        rs.getObject("is_online", Boolean.class),
+                        rs.getBoolean("acepta_no_premium"),
+                        rs.getBoolean("bedrock")))
                 .list();
     }
 
@@ -214,5 +246,12 @@ public class RankingQueries {
             Integer puerto,
             long votos,
             Integer jugadoresConectados,
-            Boolean enLinea) {}
+            Boolean enLinea,
+            /**
+             * Si admite cuentas no premium. Decide en cual de las dos
+             * clasificaciones aparece (ADR-0030).
+             */
+            boolean aceptaNoPremium,
+            /** Si acepta jugadores de movil y consola. Declarado por el dueño. */
+            boolean soportaBedrock) {}
 }

@@ -42,6 +42,9 @@ contradicciones (documentadas abajo). Este archivo es lo que manda.
 | [0025](decisiones/0025-paginas-por-categoria.md) | Una página propia por modalidad, no un filtro | ✅ Vigente |
 | [0026](decisiones/0026-codigo-de-voto-de-ocho-caracteres.md) | El código de voto baja a ocho caracteres | ✅ Vigente |
 | [0027](decisiones/0027-imagenes-automaticas-desde-el-ping.md) | Icono y banner automáticos, leídos del ping del servidor | ✅ Vigente |
+| [0028](decisiones/0028-suspension-y-purga.md) | Suspensión, purga por inactividad y limpieza de archivos | ✅ Vigente |
+| [0029](decisiones/0029-decisiones-de-marca-identidad-y-alcance.md) | Se aceptan offline y premium; marca LatinosMC; es el sitio de votación | ✅ Vigente |
+| [0030](decisiones/0030-dos-rankings-y-filtros-de-acceso.md) | Dos rankings separados, Bedrock como filtro | ✅ Vigente |
 
 ---
 
@@ -98,36 +101,18 @@ CLI · White label · LDAP/SAML
 
 ---
 
-## 4. Decisiones pendientes (bloquean diseño)
+## 4. Decisiones pendientes
 
-### 4.1 🔴 ¿Se aceptan servidores en offline-mode (pirata)?
+**No queda ninguna que bloquee diseño.** Las cuatro que había están cerradas:
 
-**Por qué bloquea:** en offline-mode el UUID del jugador es un hash de un
-nombre que cualquiera puede escribir. La identidad del votante es
-criptográficamente inexistente, y los nombres pueden contener caracteres
-arbitrarios (vector de inyección — ver ADR-0012).
+| | Decisión | Resuelto en |
+|---|---|---|
+| 4.1 | ¿Offline-mode? | **Se aceptan ambos** — [ADR-0029](decisiones/0029-decisiones-de-marca-identidad-y-alcance.md) |
+| 4.2 | Marca y paleta | **LatinosMC**, morado OKLCH 300 — [ADR-0029](decisiones/0029-decisiones-de-marca-identidad-y-alcance.md) |
+| 4.3 | ¿Sitio de votación o agregador? | **Es el sitio de votación** — [ADR-0029](decisiones/0029-decisiones-de-marca-identidad-y-alcance.md) |
+| 4.4 | ¿Cuánto pesa un voto offline? | **Dos rankings separados**, sin pesos inventados — [ADR-0030](decisiones/0030-dos-rankings-y-filtros-de-acceso.md) |
 
-**Supuesto de trabajo mientras no se resuelva:**
-Se soportan ambos, pero con **modelos de confianza separados**: la identidad se
-modela como `(tipo_de_identidad, valor)` en lugar de asumir UUID de Mojang, y
-el antifraude aplica reglas distintas por tipo. Los rankings podrán segregarse
-sin cambios de esquema.
-
-### 4.2 🔴 Nombre definitivo, dominio y paleta de marca
-
-**Por qué bloquea:** los tokens de color son el ~90% del resultado visual.
-
-**Supuesto de trabajo:** se implementan los tokens como variables CSS con una
-paleta provisional neutra. Cambiar la marca después será modificar un archivo
-de tokens, no rehacer pantallas.
-
-### 4.3 🟡 ¿La plataforma es el sitio de votación o agrega votos de otros?
-
-**Supuesto de trabajo:** la plataforma **es** el sitio de votación (lectura A).
-Es lo que indican los documentos 02, 11 y 12. El modelo de datos incluye
-`vote_source` para no cerrar la puerta a la agregación futura.
-
-### 4.4 🟡 Directrices comerciales de Mojang/Microsoft
+### 4.5 🟡 Directrices comerciales de Mojang/Microsoft
 
 Afectan a qué pueden vender los servidores y, por tanto, al marketplace y a las
 recompensas monetizables. **Debe leerse antes** de diseñar cualquier

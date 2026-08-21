@@ -317,6 +317,60 @@ public class ServerRepository {
                 .update();
     }
 
+    /**
+     * Servidores con imagen automatica puesta, para la pantalla de moderacion.
+     *
+     * <p>Solo salen los que tienen algo adoptado del ping: es lo unico sobre lo
+     * que se puede actuar. Un listado con todos obligaria a buscar entre cientos
+     * de filas las pocas que importan, y una pantalla de moderacion que no se
+     * puede recorrer de un vistazo no se usa.
+     *
+     * <p>Los ya bloqueados van primero, para poder deshacer un bloqueo puesto por
+     * error sin tener que buscarlo.
+     */
+    public List<ServidorParaModerar> conImagenesAutomaticas(int limite) {
+        return jdbc.sql(
+                        """
+                        SELECT id, slug, name, motd_json,
+                               icon_key_auto, banner_key_auto,
+                               auto_images_blocked_at, auto_images_blocked_reason,
+                               auto_images_updated_at
+                          FROM servers
+                         WHERE deleted_at IS NULL
+                           AND (auto_images_blocked_at IS NOT NULL
+                                OR icon_key_auto IS NOT NULL
+                                OR banner_key_auto IS NOT NULL)
+                         ORDER BY (auto_images_blocked_at IS NULL),
+                                  auto_images_updated_at DESC NULLS LAST
+                         LIMIT :limite
+                        """)
+                .param("limite", limite)
+                .query((rs, fila) -> new ServidorParaModerar(
+                        rs.getObject("id", UUID.class),
+                        rs.getString("slug"),
+                        rs.getString("name"),
+                        rs.getString("motd_json"),
+                        rs.getString("icon_key_auto"),
+                        rs.getString("banner_key_auto"),
+                        rs.getTimestamp("auto_images_blocked_at") != null,
+                        rs.getString("auto_images_blocked_reason"),
+                        rs.getTimestamp("auto_images_updated_at") == null
+                                ? null
+                                : rs.getTimestamp("auto_images_updated_at").toInstant()))
+                .list();
+    }
+
+    public record ServidorParaModerar(
+            UUID id,
+            String slug,
+            String nombre,
+            String motdJson,
+            String claveIconoAuto,
+            String claveBannerAuto,
+            boolean bloqueado,
+            String motivoDelBloqueo,
+            Instant actualizadoEn) {}
+
     /** Cambia el origen de una imagen entre automatico y subido por el dueño. */
     public int cambiarOrigenDeImagen(
             UUID servidorId, UUID organizacionId, String cual, boolean automatico) {
@@ -484,6 +538,7 @@ public class ServerRepository {
                                -- Columnas calculadas: la regla de que imagen se
                                -- enseña vive en la base de datos (ADR-0027).
                                s.display_icon_key, s.display_banner_key, s.motd_json,
+                               s.supports_bedrock,
                                s.version_min, s.version_max, s.hosting_region, s.theme_code,
                                p.players_online, p.players_max, p.is_online,
                                (SELECT COUNT(*) FROM votes v
@@ -528,7 +583,8 @@ public class ServerRepository {
                             rs.getString("version_min"),
                             rs.getString("version_max"),
                             rs.getString("hosting_region"),
-                            rs.getString("theme_code"));
+                            rs.getString("theme_code"),
+                            rs.getBoolean("supports_bedrock"));
                 })
                 .optional();
     }
@@ -551,7 +607,9 @@ public class ServerRepository {
             String versionMinima,
             String versionMaxima,
             String region,
-            String tema) {}
+            String tema,
+            /** Acepta movil y consola. Lo declara el dueño, no se verifica (ADR-0030). */
+            boolean soportaBedrock) {}
 
     /**
      * Da de baja un servidor.
@@ -789,7 +847,12 @@ public class ServerRepository {
                                icon_source, banner_source,
                                icon_key, banner_key,
                                icon_key_auto, banner_key_auto,
-                               motd_json, auto_images_blocked_at
+                               motd_json, auto_images_blocked_at, supports_bedrock,
+                               -- El dueño tiene que poder leer por que su
+                               -- servidor no aparece. Un servidor que desaparece
+                               -- sin explicacion es un ticket de soporte seguro y
+                               -- la sensacion de que esto es arbitrario (ADR-0028).
+                               suspended_reason
                           FROM servers
                          WHERE id = :id AND deleted_at IS NULL
                         """)
@@ -818,7 +881,9 @@ public class ServerRepository {
                         rs.getString("icon_key_auto"),
                         rs.getString("banner_key_auto"),
                         rs.getString("motd_json"),
-                        rs.getTimestamp("auto_images_blocked_at") != null))
+                        rs.getTimestamp("auto_images_blocked_at") != null,
+                        rs.getString("suspended_reason"),
+                        rs.getBoolean("supports_bedrock")))
                 .optional();
     }
 
@@ -852,7 +917,11 @@ public class ServerRepository {
             String claveIconoAuto,
             String claveBannerAuto,
             String motdJson,
-            boolean imagenesAutomaticasBloqueadas) {}
+            boolean imagenesAutomaticasBloqueadas,
+            /** Por que esta suspendido, para enseñarselo al dueño. Null si no lo esta. */
+            String motivoDeSuspension,
+            /** Acepta movil y consola, normalmente via Geyser. Lo declara el dueño (ADR-0030). */
+            boolean soportaBedrock) {}
 
     /**
      * Actualiza lo que el dueño puede cambiar de su ficha.
@@ -873,17 +942,19 @@ public class ServerRepository {
             String versionMinima,
             String versionMaxima,
             String region,
-            String tema) {
+            String tema,
+            boolean soportaBedrock) {
 
         return jdbc.sql(
                         """
                         UPDATE servers
-                           SET description     = :descripcion,
-                               version_min     = :vmin,
-                               version_max     = :vmax,
-                               hosting_region  = :region,
-                               theme_code      = :tema,
-                               updated_at      = now()
+                           SET description      = :descripcion,
+                               version_min      = :vmin,
+                               version_max      = :vmax,
+                               hosting_region   = :region,
+                               theme_code       = :tema,
+                               supports_bedrock = :bedrock,
+                               updated_at       = now()
                          WHERE id = :id AND organization_id = :org AND deleted_at IS NULL
                         """)
                 .param("id", servidorId)
@@ -893,6 +964,7 @@ public class ServerRepository {
                 .param("vmax", versionMaxima)
                 .param("region", region)
                 .param("tema", tema)
+                .param("bedrock", soportaBedrock)
                 .update();
     }
 
@@ -1016,6 +1088,262 @@ public class ServerRepository {
                            AND archived_at IS NOT NULL
                         """)
                 .param("id", servidorId)
+                .update();
+    }
+
+    // --- Suspension y purga (ADR-0028) ---------------------------------------
+
+    /**
+     * Todos los servidores vivos, para la pantalla de moderacion.
+     *
+     * <p>Los suspendidos van primero: son los que necesitan una decision. El
+     * resto se ordena por votos de la semana, que es lo que aproxima "cuanto se
+     * nota este servidor" — si algo va mal, se nota antes en los grandes.
+     */
+    public List<ServidorParaAdministrar> paraAdministracion(int limite) {
+        return jdbc.sql(
+                        """
+                        SELECT s.id, s.slug, s.name, s.status_code,
+                               s.suspended_at, s.suspended_reason,
+                               s.display_icon_key,
+                               (SELECT COUNT(*) FROM votes v
+                                 WHERE v.server_id = s.id
+                                   AND v.status_code = 'ACCEPTED'
+                                   AND v.created_at >= now() - interval '7 days') AS votos
+                          FROM servers s
+                         WHERE s.deleted_at IS NULL
+                         ORDER BY (s.suspended_at IS NULL), votos DESC, s.name
+                         LIMIT :limite
+                        """)
+                .param("limite", limite)
+                .query((rs, fila) -> new ServidorParaAdministrar(
+                        rs.getObject("id", UUID.class),
+                        rs.getString("slug"),
+                        rs.getString("name"),
+                        rs.getString("status_code"),
+                        rs.getString("suspended_reason"),
+                        rs.getString("display_icon_key"),
+                        rs.getLong("votos")))
+                .list();
+    }
+
+    public record ServidorParaAdministrar(
+            UUID id,
+            String slug,
+            String nombre,
+            String estado,
+            String motivoDeSuspension,
+            String claveIcono,
+            long votosSemana) {}
+
+    /**
+     * Suspende un servidor.
+     *
+     * <p>Basta con cambiar el estado para que desaparezca del directorio, del
+     * ranking, de la busqueda, de la ronda de ping y de la aceptacion de votos:
+     * todas esas consultas ya filtran por {@code ACTIVE}. No hay que acordarse de
+     * nada en ninguna de ellas, que es justo el tipo de cosa que se olvida.
+     *
+     * <p>No toca sus votos ni sus imagenes: una suspension puede levantarse, y al
+     * levantarla el servidor tiene que volver exactamente como estaba.
+     */
+    public int suspender(UUID servidorId, String motivo, UUID administradorId) {
+        return jdbc.sql(
+                        """
+                        UPDATE servers
+                           SET status_code      = 'SUSPENDED',
+                               suspended_at     = now(),
+                               suspended_reason = :motivo,
+                               suspended_by     = :admin,
+                               updated_at       = now()
+                         WHERE id = :id
+                           AND deleted_at IS NULL
+                           AND status_code <> 'SUSPENDED'
+                        """)
+                .param("id", servidorId)
+                .param("motivo", motivo)
+                .param("admin", administradorId)
+                .update();
+    }
+
+    /**
+     * Levanta la suspension.
+     *
+     * <p>Vuelve a {@code ACTIVE} y no al estado que tuviera antes. Es deliberado:
+     * el unico otro estado del que se puede venir es {@code ARCHIVED} por
+     * inactividad, y si el plugin lleva sin latir todo ese tiempo, la ronda
+     * nocturna volvera a archivarlo esta misma noche. Reconstruir aqui el estado
+     * anterior seria codigo para un caso que se corrige solo.
+     */
+    public int levantarSuspension(UUID servidorId) {
+        return jdbc.sql(
+                        """
+                        UPDATE servers
+                           SET status_code      = 'ACTIVE',
+                               suspended_at     = NULL,
+                               suspended_reason = NULL,
+                               suspended_by     = NULL,
+                               updated_at       = now()
+                         WHERE id = :id
+                           AND deleted_at IS NULL
+                           AND status_code = 'SUSPENDED'
+                        """)
+                .param("id", servidorId)
+                .update();
+    }
+
+    /**
+     * Servidores archivados hace tanto que toca quitarles lo que ocupa sitio.
+     *
+     * <p>Se excluyen los suspendidos: esos estan en el otro carril y no se purgan
+     * nunca (ADR-0028). Y los ya purgados, que no tienen nada mas que quitar.
+     */
+    public List<ServidorParaPurgar> archivadosDesdeHace(int dias, int limite) {
+        return jdbc.sql(
+                        """
+                        SELECT id, organization_id, slug, name, archived_at, purge_warned_at,
+                               icon_key, banner_key, icon_key_auto, banner_key_auto
+                          FROM servers
+                         WHERE deleted_at IS NULL
+                           AND archived_at IS NOT NULL
+                           AND purged_at IS NULL
+                           AND suspended_at IS NULL
+                           AND archived_at < now() - make_interval(days => :dias)
+                         ORDER BY archived_at
+                         LIMIT :limite
+                        """)
+                .param("dias", dias)
+                .param("limite", limite)
+                .query((rs, fila) -> new ServidorParaPurgar(
+                        rs.getObject("id", UUID.class),
+                        rs.getObject("organization_id", UUID.class),
+                        rs.getString("slug"),
+                        rs.getString("name"),
+                        rs.getTimestamp("archived_at").toInstant(),
+                        rs.getTimestamp("purge_warned_at") == null
+                                ? null
+                                : rs.getTimestamp("purge_warned_at").toInstant(),
+                        java.util.stream.Stream.of(
+                                        rs.getString("icon_key"),
+                                        rs.getString("banner_key"),
+                                        rs.getString("icon_key_auto"),
+                                        rs.getString("banner_key_auto"))
+                                .filter(java.util.Objects::nonNull)
+                                .distinct()
+                                .toList()))
+                .list();
+    }
+
+    public int marcarAvisoDePurga(UUID servidorId) {
+        return jdbc.sql("UPDATE servers SET purge_warned_at = now() WHERE id = :id")
+                .param("id", servidorId)
+                .update();
+    }
+
+    /**
+     * Quita del servidor todo lo que cuesta dinero o estorba.
+     *
+     * <p><strong>No borra la fila, y no puede.</strong> {@code votes} y
+     * {@code vote_rewards} apuntan aqui con {@code ON DELETE RESTRICT}, asi que
+     * PostgreSQL rechazaria el borrado; y {@code slot_bookings} apunta con
+     * {@code ON DELETE CASCADE}, asi que un borrado se llevaria por delante y en
+     * silencio el registro de espacios destacados ya pagados.
+     *
+     * <p>Se marca {@code deleted_at} ademas de {@code purged_at}: es lo que hace
+     * que desaparezca de todas las consultas —que ya lo filtran— y lo que libera
+     * su {@code slug}, porque el indice unico es parcial sobre esa columna.
+     *
+     * <p>Los archivos del almacen los borra quien llama, antes de esto. Aqui solo
+     * se sueltan las referencias.
+     */
+    public int purgar(UUID servidorId) {
+        return jdbc.sql(
+                        """
+                        UPDATE servers
+                           SET purged_at       = now(),
+                               deleted_at      = now(),
+                               status_code     = 'ARCHIVED',
+                               icon_key        = NULL,
+                               banner_key      = NULL,
+                               icon_key_auto   = NULL,
+                               banner_key_auto = NULL,
+                               motd_json       = NULL,
+                               motd_hash       = NULL,
+                               favicon_hash    = NULL,
+                               description     = NULL,
+                               website_url     = NULL,
+                               discord_url     = NULL,
+                               updated_at      = now()
+                         WHERE id = :id
+                           AND deleted_at IS NULL
+                           AND purged_at IS NULL
+                        """)
+                .param("id", servidorId)
+                .update();
+    }
+
+    /**
+     * @param claves todo lo que hay que borrar del almacen; puede estar vacio
+     */
+    public record ServidorParaPurgar(
+            UUID id,
+            UUID organizacionId,
+            String slug,
+            String nombre,
+            Instant archivadoEn,
+            Instant avisadoEn,
+            List<String> claves) {}
+
+    // --- Archivos huerfanos (ADR-0017, construido en ADR-0028) ---------------
+
+    /**
+     * Archivos que se reemplazaron hace dias y siguen ocupando sitio.
+     *
+     * <p>Los siete dias de margen no son por prudencia vaga: si se borrara al
+     * instante, una peticion en vuelo que ya estaba sirviendo el archivo anterior
+     * se quedaria a medias, y un fallo al actualizar la base de datos dejaria al
+     * servidor sin imagen y sin forma de recuperarla.
+     */
+    public List<String> huerfanosParaBorrar(int dias, int limite) {
+        return jdbc.sql(
+                        """
+                        SELECT storage_key
+                          FROM uploads
+                         WHERE deleted_at IS NOT NULL
+                           AND purged_at IS NULL
+                           AND deleted_at < now() - make_interval(days => :dias)
+                         ORDER BY deleted_at
+                         LIMIT :limite
+                        """)
+                .param("dias", dias)
+                .param("limite", limite)
+                .query(String.class)
+                .list();
+    }
+
+    /**
+     * Deja constancia de que el archivo ya no esta.
+     *
+     * <p>La fila se conserva: es el registro de quien subio que, y sirve para
+     * auditar y para detectar abuso. Lo que desaparece son los bytes.
+     */
+    public int marcarHuerfanoBorrado(String clave) {
+        return jdbc.sql("UPDATE uploads SET purged_at = now() WHERE storage_key = :clave AND purged_at IS NULL")
+                .param("clave", clave)
+                .update();
+    }
+
+    /** Marca huerfanos todos los archivos de un servidor. Se usa al purgarlo. */
+    public int marcarArchivosDeServidorHuerfanos(List<String> claves) {
+        if (claves == null || claves.isEmpty()) {
+            return 0;
+        }
+        return jdbc.sql(
+                        """
+                        UPDATE uploads SET deleted_at = COALESCE(deleted_at, now())
+                         WHERE storage_key IN (:claves)
+                        """)
+                .param("claves", claves)
                 .update();
     }
 

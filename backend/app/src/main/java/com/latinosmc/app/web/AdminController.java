@@ -402,6 +402,139 @@ public class AdminController {
         return administradores.administradores();
     }
 
+    // --- Moderacion de servidores (ADR-0028) ---------------------------------
+
+    /** Todos los servidores vivos, con los suspendidos primero. */
+    @GetMapping("/servidores")
+    public List<ServidorAdministrable> servidores(@UsuarioActual IdentityRepository.Usuario usuario) {
+        exigirAdministrador(usuario);
+
+        return servidores.paraAdministracion(300).stream()
+                .map(s -> new ServidorAdministrable(
+                        s.id(),
+                        s.slug(),
+                        s.nombre(),
+                        s.estado(),
+                        s.motivoDeSuspension(),
+                        s.claveIcono() == null ? null : almacen.urlPublica(s.claveIcono()),
+                        s.votosSemana()))
+                .toList();
+    }
+
+    /**
+     * Suspende un servidor (ADR-0028).
+     *
+     * <p>Desaparece del directorio, del ranking, de la busqueda, del sondeo y deja
+     * de aceptar votos. Sus datos no se tocan: una suspension puede levantarse, y
+     * al levantarla el servidor vuelve exactamente como estaba.
+     *
+     * <p><strong>No caduca y no se purga sola.</strong> Es deliberado: un
+     * temporizador de borrado sobre la suspension destruiria la prueba de por que
+     * suspendimos a alguien justo cuando mas falta hace, y le bastaria con esperar
+     * para que su historial se limpiara solo.
+     *
+     * <p>El motivo es obligatorio y lo ve el dueño en su panel. Un servidor que
+     * desaparece sin explicacion es un ticket de soporte garantizado y la
+     * sensacion de que esto es arbitrario.
+     */
+    @PostMapping("/servidores/{servidorId}/suspender")
+    public Map<String, Object> suspender(
+            @UsuarioActual IdentityRepository.Usuario usuario,
+            @PathVariable java.util.UUID servidorId,
+            @RequestBody @Valid PeticionSuspension peticion) {
+
+        exigirAdministrador(usuario);
+
+        String motivo = peticion.motivo().trim();
+        int filas = servidores.suspender(servidorId, motivo, usuario.id());
+
+        administradores.registrar(
+                Ids.newId(),
+                usuario.id(),
+                "server.suspended",
+                "server",
+                servidorId.toString(),
+                Map.of("motivo", motivo));
+
+        log.warn("El administrador {} suspendio el servidor {}: {}", usuario.id(), servidorId, motivo);
+        return Map.of("suspendido", filas > 0);
+    }
+
+    @PostMapping("/servidores/{servidorId}/levantar-suspension")
+    public Map<String, Object> levantarSuspension(
+            @UsuarioActual IdentityRepository.Usuario usuario, @PathVariable java.util.UUID servidorId) {
+
+        exigirAdministrador(usuario);
+        int filas = servidores.levantarSuspension(servidorId);
+
+        administradores.registrar(
+                Ids.newId(),
+                usuario.id(),
+                "server.unsuspended",
+                "server",
+                servidorId.toString(),
+                Map.of());
+
+        log.warn("El administrador {} levanto la suspension del servidor {}", usuario.id(), servidorId);
+        return Map.of("activo", filas > 0);
+    }
+
+    /**
+     * @param motivo obligatorio: lo ve el dueño y queda en la auditoria. Sin el,
+     *     una suspension es indistinguible de un fallo de la plataforma
+     */
+    public record PeticionSuspension(
+            @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max = 500)
+                    String motivo) {}
+
+    public record ServidorAdministrable(
+            java.util.UUID id,
+            String slug,
+            String nombre,
+            String estado,
+            String motivoDeSuspension,
+            String iconoUrl,
+            long votosSemana) {}
+
+    /**
+     * Servidores cuyas imagenes hemos cogido de su ping, para revisarlas.
+     *
+     * <p>Es la pantalla que hace viable la politica del ADR-0027: adoptamos
+     * contenido de terceros al instante y lo servimos desde nuestro dominio, asi
+     * que tiene que haber un sitio donde verlo y un boton para quitarlo. Sin eso,
+     * "publicar y poder retirar" seria solo "publicar".
+     */
+    @GetMapping("/servidores/imagenes-automaticas")
+    public List<ServidorConImagenAutomatica> imagenesAutomaticas(
+            @UsuarioActual IdentityRepository.Usuario usuario) {
+
+        exigirAdministrador(usuario);
+
+        return servidores.conImagenesAutomaticas(200).stream()
+                .map(s -> new ServidorConImagenAutomatica(
+                        s.id(),
+                        s.slug(),
+                        s.nombre(),
+                        s.motdJson(),
+                        s.claveIconoAuto() == null ? null : almacen.urlPublica(s.claveIconoAuto()),
+                        s.claveBannerAuto() == null ? null : almacen.urlPublica(s.claveBannerAuto()),
+                        s.bloqueado(),
+                        s.motivoDelBloqueo(),
+                        s.actualizadoEn()))
+                .toList();
+    }
+
+    public record ServidorConImagenAutomatica(
+            java.util.UUID id,
+            String slug,
+            String nombre,
+            String motd,
+            String iconoUrl,
+            String bannerUrl,
+            boolean bloqueado,
+            String motivoDelBloqueo,
+            java.time.Instant actualizadoEn) {}
+
     /**
      * Retira las imagenes automaticas de un servidor (ADR-0027).
      *

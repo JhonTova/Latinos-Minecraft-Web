@@ -19,9 +19,11 @@ import {
   ajustesDelSitio,
   destacadosDePortada,
   estadisticas,
-  obtenerRanking,
+  obtenerTopsSeparados,
   type SlotEnPortada,
 } from "@/lib/api";
+import type { ServidorEnRanking } from "@/lib/tipos";
+import { TopsSeparados } from "@/components/tops-separados";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -64,17 +66,16 @@ export default async function Page() {
 
         <FranjaDeCifras cifras={cifras} />
 
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_290px] lg:items-start">
-          <div className="min-w-0">
-            <Suspense fallback={<RankingCargando />}>
-              <Ranking />
-            </Suspense>
-          </div>
+        {/* Los dos rankings ocupan el ancho completo y la barra lateral baja.
+            Antes la lista compartía fila con ella; con DOS listas al lado, cada
+            una se habría quedado en unos 380 píxeles y las filas —icono, nombre,
+            etiquetas, votos— dejan de leerse ahí. La barra lateral es contenido
+            secundario y funciona igual debajo. */}
+        <Suspense fallback={<RankingCargando />}>
+          <Ranking />
+        </Suspense>
 
-          <div className="lg:sticky lg:top-28">
-            <BarraLateral />
-          </div>
-        </div>
+        <BarraLateral />
 
         <Suspense fallback={null}>
           <MarcasPatrocinadoras />
@@ -159,43 +160,98 @@ function HuecoLibre({ slot }: { slot: number }) {
 
 /* ========================================================================== */
 
+/**
+ * Los dos rankings separados (ADR-0030).
+ *
+ * No se mezclan porque en offline-mode la identidad del votante no es débil: no
+ * existe. Se vota escribiendo un nombre. Comparar los dos mundos en una sola
+ * tabla haría que el ranking midiera lo fácil que es falsificar votos, y el
+ * producto es justo lo contrario.
+ *
+ * Pero el argumento que se le da al visitante no es ese, es más simple y más
+ * cierto: **están separados para que encuentres dónde puedes jugar de verdad.**
+ * Quien no tiene cuenta original no es que lo pase peor en un servidor premium,
+ * es que el servidor le rechaza la conexión.
+ */
 async function Ranking() {
   await connection();
-  const servidores = await obtenerRanking();
+  const { premium, mixto } = await obtenerTopsSeparados();
 
-  if (servidores.length === 0) {
+  if (premium.length === 0 && mixto.length === 0) {
     return <SinServidores />;
   }
 
   return (
     <section aria-labelledby="titulo-ranking">
-      {/* Sin esto Google ve cincuenta enlaces sueltos; con esto entiende que es
-          un ranking y que el orden significa algo. */}
-      <DatosEstructurados datos={esquemaDeRanking(servidores)} />
+      {/* Sin esto Google ve enlaces sueltos; con esto entiende que es un ranking
+          y que el orden significa algo. */}
+      <DatosEstructurados datos={esquemaDeRanking([...premium, ...mixto])} />
 
       <EncabezadoDeBloque
         id="titulo-ranking"
         titulo="Ranking"
         nota="Votos verificados de los últimos 7 días"
+        enlace={{ href: "/servidores", texto: "Ver todos" }}
       />
 
-      <ul className="space-y-2">
-        {servidores.slice(0, 25).map((servidor, i) => (
-          <FilaServidor key={servidor.id} posicion={i + 1} servidor={servidor} />
-        ))}
-      </ul>
-
-      {servidores.length > 25 && (
-        <div className="mt-5 text-center">
-          <Link
-            href="/servidores"
-            className="boton-vivo inline-block rounded-md border border-border bg-surface px-5 py-2.5 text-sm font-medium hover:border-border-strong hover:bg-surface-sunken"
-          >
-            Ver los {servidores.length} servidores
-          </Link>
-        </div>
-      )}
+      <TopsSeparados
+        premium={
+          <ListaDelTop
+            titulo="Solo cuentas premium"
+            explicacion="Hace falta una cuenta original de Minecraft para entrar."
+            servidores={premium}
+            vacio="Todavía no hay servidores en esta lista."
+          />
+        }
+        mixto={
+          <ListaDelTop
+            titulo="Cuentas premium y no premium"
+            explicacion="Se puede entrar con cuenta original o sin ella."
+            servidores={mixto}
+            vacio="Todavía no hay servidores en esta lista."
+          />
+        }
+      />
     </section>
+  );
+}
+
+function ListaDelTop({
+  titulo,
+  explicacion,
+  servidores,
+  vacio,
+}: {
+  titulo: string;
+  explicacion: string;
+  servidores: ServidorEnRanking[];
+  vacio: string;
+}) {
+  return (
+    <div>
+      <div className="mb-3">
+        <h3 className="font-semibold">{titulo}</h3>
+        {/* La explicación va siempre, no solo en un tooltip. Es la diferencia
+            entre que alguien entienda la separación y que le parezca arbitraria. */}
+        <p className="mt-0.5 text-sm text-muted text-pretty">{explicacion}</p>
+      </div>
+
+      {servidores.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border py-10 text-center text-sm text-muted">
+          {vacio}
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {servidores.slice(0, 10).map((servidor, i) => (
+            <FilaServidor
+              key={servidor.id}
+              posicion={i + 1}
+              servidor={servidor}
+            />
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

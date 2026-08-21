@@ -111,10 +111,115 @@ public class ManejadorDeErrores {
         return problema;
     }
 
+    // --- Peticiones mal formadas ---------------------------------------------
+    //
+    // Todo lo que sigue lo provoca QUIEN LLAMA, no nosotros. Antes no habia
+    // ningun manejador para estos casos, asi que caian en la red de seguridad de
+    // abajo y salian como 500 con una referencia de soporte.
+    //
+    // Eran dos problemas, y el segundo es el grave:
+    //
+    //   1. La respuesta mentia. Una URL que no existe es un 404; un cuerpo con
+    //      JSON roto es un 400. Decir 500 es decirle a quien integra que el
+    //      fallo es nuestro y que reintente, cuando lo que tiene que hacer es
+    //      corregir su peticion.
+    //
+    //   2. Cada una escribia un ERROR con su traza completa. Un directorio
+    //      publico recibe rastreadores buscando /wp-admin y /.env a todas horas,
+    //      y con esto el registro se llenaba de errores graves que no lo eran.
+    //      Un registro donde todo es un error es un registro donde no se ve el
+    //      error de verdad.
+
+    /**
+     * La URL no existe.
+     *
+     * <p>No se registra nada: en un sitio publico esto son sobre todo
+     * rastreadores probando rutas al azar, y anotar cada intento no aporta
+     * informacion, solo tapa la que si importa.
+     */
+    @ExceptionHandler({
+        org.springframework.web.servlet.resource.NoResourceFoundException.class,
+        org.springframework.web.servlet.NoHandlerFoundException.class
+    })
+    public ProblemDetail rutaInexistente(Exception e) {
+        return crear(HttpStatus.NOT_FOUND, "not_found", "Esa direccion no existe.");
+    }
+
+    /** La ruta existe pero no con ese metodo. */
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ProblemDetail metodoNoPermitido(
+            org.springframework.web.HttpRequestMethodNotSupportedException e) {
+        return crear(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "method_not_allowed",
+                "Esa direccion no admite " + e.getMethod() + ".");
+    }
+
+    /**
+     * Un valor de la URL no es del tipo que se esperaba.
+     *
+     * <p>El caso corriente es un identificador que no es un UUID valido. Es
+     * trivial de provocar —basta con editar la barra de direcciones— y antes
+     * dejaba un error grave en el registro por cada intento.
+     *
+     * <p>Se nombra el parametro pero <strong>no se devuelve el valor recibido</strong>:
+     * reflejarlo tal cual en la respuesta es como se construye un XSS reflejado
+     * si algun cliente lo pinta sin escapar.
+     */
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ProblemDetail tipoInvalido(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException e) {
+        return crear(
+                HttpStatus.BAD_REQUEST,
+                "request.invalid",
+                "El valor de '" + e.getName() + "' no tiene el formato esperado.");
+    }
+
+    @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+    public ProblemDetail parametroFaltante(
+            org.springframework.web.bind.MissingServletRequestParameterException e) {
+        return crear(
+                HttpStatus.BAD_REQUEST,
+                "request.invalid",
+                "Falta el parametro '" + e.getParameterName() + "'.");
+    }
+
+    /**
+     * El cuerpo no se puede leer: JSON mal formado, vacio, o de otro tipo.
+     *
+     * <p>El mensaje es generico a proposito. El de la excepcion trae nombres de
+     * clases de Java y la posicion exacta del fallo, y eso describe nuestra
+     * implementacion, no el problema de quien llama.
+     */
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ProblemDetail cuerpoIlegible(org.springframework.http.converter.HttpMessageNotReadableException e) {
+        return crear(HttpStatus.BAD_REQUEST, "request.invalid", "No hemos podido leer los datos enviados.");
+    }
+
+    /**
+     * El archivo pasa del limite que admite la aplicacion.
+     *
+     * <p>413 y no 500: es el mismo codigo que devuelve el proxy de delante cuando
+     * corta por su cuenta, asi que el cliente puede tratar los dos casos igual.
+     * La web ya lo hace.
+     */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ProblemDetail archivoDemasiadoGrande(
+            org.springframework.web.multipart.MaxUploadSizeExceededException e) {
+        return crear(
+                HttpStatus.PAYLOAD_TOO_LARGE,
+                "image.too_large",
+                "El archivo pesa demasiado. Prueba con uno mas ligero.");
+    }
+
     /**
      * Red de seguridad. Nunca se expone el detalle interno hacia fuera: un stack
      * trace le dice a un atacante que framework, que version y que estructura hay
      * detras. Al usuario se le da un identificador; el detalle vive en los logs.
+     *
+     * <p>Que llegue algo aqui significa que hemos fallado NOSOTROS. Por eso lo de
+     * arriba: cuanto menos ruido caiga en este metodo, mas se puede confiar en
+     * que un ERROR en el registro es algo que hay que mirar.
      */
     @ExceptionHandler(Exception.class)
     public ProblemDetail inesperado(Exception e) {

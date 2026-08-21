@@ -26,6 +26,16 @@ export interface ServidorEnRanking {
   bannerUrl: string | null;
   /** Votos por dia de la ultima semana, para el minigrafico. */
   tendencia: number[];
+  /**
+   * Si admite cuentas no premium (ADR-0030).
+   *
+   * Decide en cuál de las dos clasificaciones sale. Para el jugador es el dato
+   * más útil después de la dirección: sin cuenta original, un servidor premium
+   * no es que le convenga menos — es que no puede entrar.
+   */
+  aceptaNoPremium: boolean;
+  /** Si se puede jugar desde móvil o consola. Lo declara el dueño. */
+  soportaBedrock: boolean;
 }
 
 /** Lo que devuelve un enlace de voto válido (ADR-0016). */

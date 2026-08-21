@@ -79,7 +79,27 @@ export default async function PaginaServidor(
         </div>
       </header>
 
-      {!servidor.verificado && (
+      {/* La suspensión va primero y en rojo: es lo más importante que le puede
+          pasar a este servidor, y sin explicación su dueño solo ve que ha
+          desaparecido del directorio (ADR-0028). */}
+      {servidor.estado === "SUSPENDED" && (
+        <div className="mb-6">
+          <Aviso tono="error">
+            <strong>Hemos suspendido este servidor.</strong> No aparece en el
+            directorio ni en el ranking, y no acepta votos.
+            {servidor.motivoDeSuspension && (
+              <>
+                {" "}
+                Motivo: {servidor.motivoDeSuspension}
+              </>
+            )}{" "}
+            No hemos borrado nada: si se levanta la suspensión, vuelve como
+            estaba. Escríbenos si crees que es un error.
+          </Aviso>
+        </div>
+      )}
+
+      {!servidor.verificado && servidor.estado !== "SUSPENDED" && (
         <div className="mb-6">
           <Aviso tono="atencion">
             Tu servidor aún no aparece en el ranking. Se activará solo en cuanto
@@ -120,6 +140,7 @@ export default async function PaginaServidor(
               region: servidor.region,
               tema: servidor.tema,
               modalidades: servidor.modalidades,
+              soportaBedrock: servidor.soportaBedrock,
             }}
             catalogo={catalogo}
           />

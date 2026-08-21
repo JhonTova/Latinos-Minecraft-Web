@@ -80,7 +80,8 @@ public class DirectorioController {
                                 .map(com.latinosmc.servers.ServerRepository.Modalidad::nombre)
                                 .toList(),
                         ranking.tendenciaDiaria(servidor.id(), 7),
-                        servidor.motdJson()));
+                        servidor.motdJson(),
+                        servidor.soportaBedrock()));
     }
 
     private String urlDe(String clave) {
@@ -120,5 +121,7 @@ public class DirectorioController {
              * texto: un lector de pantalla no puede leer un PNG, y el buscador
              * tampoco. Null si el servidor no anuncia ninguno.
              */
-            String motd) {}
+            String motd,
+            /** Acepta movil y consola, normalmente via Geyser (ADR-0030). */
+            boolean soportaBedrock) {}
 }

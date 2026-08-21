@@ -34,6 +34,8 @@ export interface FichaEditable {
   region: string | null;
   tema: string;
   modalidades: string[];
+  /** Si acepta jugadores de móvil y consola, normalmente vía Geyser (ADR-0030). */
+  soportaBedrock: boolean;
 }
 
 /**
@@ -59,6 +61,7 @@ export function EditorDeFicha({
   const [vMax, setVMax] = useState(ficha.versionMaxima ?? "");
   const [region, setRegion] = useState(ficha.region ?? "");
   const [tema, setTema] = useState(ficha.tema ?? "DEFECTO");
+  const [bedrock, setBedrock] = useState(ficha.soportaBedrock ?? false);
   const [modalidades, setModalidades] = useState<string[]>(ficha.modalidades);
 
   const [guardando, setGuardando] = useState(false);
@@ -90,6 +93,7 @@ export function EditorDeFicha({
           region,
           tema,
           modalidades,
+          soportaBedrock: bedrock,
         }),
       });
       if (!respuesta.ok) {
@@ -179,6 +183,29 @@ export function EditorDeFicha({
           maxLength={12}
         />
       </div>
+
+      {/* Bedrock (ADR-0030).
+          Una casilla y no un tipo de servidor aparte: casi ningún servidor
+          latino es Bedrock nativo, lo que hay son servidores Java con Geyser.
+          La pregunta que se hace el jugador es «¿puedo entrar desde el móvil?»,
+          y eso es una propiedad de este servidor, no otro juego. */}
+      <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-4">
+        <input
+          type="checkbox"
+          checked={bedrock}
+          onChange={(e) => setBedrock(e.target.checked)}
+          className="mt-0.5 size-4 shrink-0 accent-[var(--primary)]"
+        />
+        <span className="text-sm">
+          <span className="font-medium">Se puede jugar desde móvil o consola</span>
+          <span className="mt-0.5 block text-muted text-pretty">
+            Márcalo si tienes Geyser o similar y los jugadores de Bedrock pueden
+            entrar. Aparecerás en el filtro «Móvil y consola», que es de los más
+            usados. No lo marques si no funciona: el jugador lo descubre al
+            intentar entrar y se va.
+          </span>
+        </span>
+      </label>
 
       <Campo
         id="region"

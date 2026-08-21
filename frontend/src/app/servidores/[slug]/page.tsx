@@ -4,6 +4,10 @@ import {
   esquemaDeServidor,
 } from "@/components/datos-estructurados";
 import { CopiarIp } from "@/components/copiar-ip";
+import {
+  EtiquetaBedrock,
+  EtiquetaDeCuenta,
+} from "@/components/etiquetas-de-cuenta";
 import { Motd, textoPlanoDelMotd } from "@/components/motd";
 import { Sparkline } from "@/components/sparkline";
 import { PanelDeVoto } from "@/components/panel-de-voto";
@@ -179,6 +183,13 @@ export default async function PaginaServidor(
           </div>
         </div>
 
+        {/* Justo bajo el nombre, antes que nada más. Es lo primero que necesita
+            saber quien llega: si puede entrar o no (ADR-0030). */}
+        <div className="entra entra-1 mt-4 flex flex-wrap items-center gap-2">
+          <EtiquetaDeCuenta aceptaNoPremium={servidor.aceptaOffline} />
+          {servidor.soportaBedrock && <EtiquetaBedrock />}
+        </div>
+
         {/* El MOTD va antes que la descripción: es lo que el servidor dice de sí
             mismo AHORA, y muchos lo cambian a diario para anunciar eventos. La
             descripción se escribió una vez al darse de alta y casi nadie vuelve
@@ -234,13 +245,19 @@ export default async function PaginaServidor(
                   valor={servidor.direccion}
                   monoespaciada
                 />
+                {/* El tipo de cuenta ya está arriba, en una etiqueta bajo el
+                    nombre, que es donde se mira primero. Aquí se quedaba
+                    "Premium ..." cortado en una tarjeta que valora números, y
+                    repetir el dato en dos sitios solo hacía que uno de los dos
+                    se viera mal. En su lugar, lo que aquí falta: si se puede
+                    jugar desde el móvil. */}
                 <Dato
-                  etiqueta="Cuentas admitidas"
-                  valor={servidor.aceptaOffline ? "Premium y no premium" : "Solo premium"}
+                  etiqueta="Desde el móvil"
+                  valor={servidor.soportaBedrock ? "Sí" : "No"}
                   nota={
-                    servidor.aceptaOffline
-                      ? "Puedes entrar sin cuenta de Mojang"
-                      : "Necesitas cuenta original"
+                    servidor.soportaBedrock
+                      ? "También consola (Bedrock)"
+                      : "Solo Minecraft Java"
                   }
                 />
               </div>

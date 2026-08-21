@@ -54,6 +54,11 @@ export default async function PaginaServidores(
   const modalidad =
     typeof parametros.modalidad === "string" ? parametros.modalidad : null;
   const busqueda = typeof parametros.q === "string" ? parametros.q : null;
+  const cuentas =
+    parametros.cuentas === "premium" || parametros.cuentas === "todas"
+      ? parametros.cuentas
+      : null;
+  const bedrock = parametros.bedrock === "1";
 
   return (
     <>
@@ -74,11 +79,21 @@ export default async function PaginaServidores(
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_290px] lg:items-start">
           <div className="min-w-0">
             <Suspense fallback={<FiltrosCargando />}>
-              <Filtros activa={modalidad} />
+              <Filtros
+                activa={modalidad}
+                cuentas={cuentas}
+                bedrock={bedrock}
+                busqueda={busqueda}
+              />
             </Suspense>
 
             <Suspense fallback={<FilasCargando cuantas={10} />}>
-              <Listado modalidad={modalidad} busqueda={busqueda} />
+              <Listado
+                modalidad={modalidad}
+                busqueda={busqueda}
+                cuentas={cuentas}
+                bedrock={bedrock}
+              />
             </Suspense>
           </div>
 
@@ -102,24 +117,96 @@ export default async function PaginaServidores(
  * gente escribe en el buscador, y una página por modalidad es la forma de
  * aparecer ahí.
  */
-async function Filtros({ activa }: { activa: string | null }) {
+async function Filtros({
+  activa,
+  cuentas,
+  bedrock,
+  busqueda,
+}: {
+  activa: string | null;
+  cuentas: string | null;
+  bedrock: boolean;
+  busqueda: string | null;
+}) {
   const catalogo = await catalogoDeModalidades().catch(() => []);
-  if (catalogo.length === 0) return null;
+
+  /**
+   * Construye la URL cambiando un filtro y conservando los demás.
+   *
+   * Sin esto, elegir "solo premium" borraría la modalidad que ya estaba puesta,
+   * y quien quiera "skyblock premium desde el móvil" no puede llegar nunca:
+   * cada clic desharía el anterior.
+   */
+  const con = (cambios: Record<string, string | null>) => {
+    const p = new URLSearchParams();
+    if (busqueda) p.set("q", busqueda);
+    if (activa) p.set("modalidad", activa);
+    if (cuentas) p.set("cuentas", cuentas);
+    if (bedrock) p.set("bedrock", "1");
+
+    for (const [clave, valor] of Object.entries(cambios)) {
+      if (valor === null) p.delete(clave);
+      else p.set(clave, valor);
+    }
+    const cadena = p.toString();
+    return cadena ? `/servidores?${cadena}` : "/servidores";
+  };
 
   return (
-    <div className="mb-5 flex flex-wrap gap-1.5">
-      <Filtro href="/servidores" activo={!activa}>
-        Todas
-      </Filtro>
-      {catalogo.map((m) => (
-        <Filtro
-          key={m.codigo}
-          href={`/servidores/modalidad/${m.codigo.toLowerCase()}`}
-          activo={activa === m.codigo}
-        >
-          {m.nombre}
-        </Filtro>
-      ))}
+    <div className="mb-5 space-y-3">
+      {/* --- Quién puede entrar ------------------------------------------
+          Va primero porque es el filtro que más recortes hace y el que más le
+          importa al jugador: sin cuenta original, un servidor premium no es que
+          le convenga menos, es que no puede entrar (ADR-0030). */}
+      <div>
+        <p className="mb-1.5 text-xs font-medium text-subtle">Quién puede entrar</p>
+        <div className="flex flex-wrap gap-1.5">
+          <Filtro href={con({ cuentas: null })} activo={!cuentas}>
+            Todos
+          </Filtro>
+          <Filtro href={con({ cuentas: "premium" })} activo={cuentas === "premium"}>
+            Solo premium
+          </Filtro>
+          <Filtro href={con({ cuentas: "todas" })} activo={cuentas === "todas"}>
+            Premium y no premium
+          </Filtro>
+          <Filtro
+            href={con({ bedrock: bedrock ? null : "1" })}
+            activo={bedrock}
+          >
+            Móvil y consola
+          </Filtro>
+        </div>
+      </div>
+
+      {/* --- Modalidad -------------------------------------------------- */}
+      {catalogo.length > 0 && (
+        <div>
+          <p className="mb-1.5 text-xs font-medium text-subtle">Modalidad</p>
+          <div className="flex flex-wrap gap-1.5">
+            <Filtro href={con({ modalidad: null })} activo={!activa}>
+              Todas
+            </Filtro>
+            {catalogo.map((m) => (
+              <Filtro
+                key={m.codigo}
+                // Sin otros filtros puestos se va a la página propia de la
+                // modalidad, que sí tiene título y texto y es la que Google
+                // puede posicionar. Con filtros, a la URL con parámetros: esa
+                // combinación no es una página, es una búsqueda.
+                href={
+                  !cuentas && !bedrock && !busqueda
+                    ? `/servidores/modalidad/${m.codigo.toLowerCase()}`
+                    : con({ modalidad: m.codigo })
+                }
+                activo={activa === m.codigo}
+              >
+                {m.nombre}
+              </Filtro>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -161,9 +248,13 @@ function FiltrosCargando() {
 async function Listado({
   modalidad,
   busqueda,
+  cuentas,
+  bedrock,
 }: {
   modalidad: string | null;
   busqueda: string | null;
+  cuentas: string | null;
+  bedrock: boolean;
 }) {
   await connection();
   const todos = await obtenerRanking();
@@ -181,6 +272,20 @@ async function Listado({
   let servidores = nombre
     ? todos.filter((s) => s.modalidades.includes(nombre))
     : todos;
+
+  // Aquí los servidores salen MEZCLADOS y es el jugador quien decide (ADR-0030).
+  // La separación estricta es cosa de los dos rankings de la portada; en el
+  // listado completo, obligarle a elegir un mundo antes de poder buscar sería
+  // ponerle una puerta delante de la puerta.
+  if (cuentas === "premium") {
+    servidores = servidores.filter((s) => !s.aceptaNoPremium);
+  } else if (cuentas === "todas") {
+    servidores = servidores.filter((s) => s.aceptaNoPremium);
+  }
+
+  if (bedrock) {
+    servidores = servidores.filter((s) => s.soportaBedrock);
+  }
 
   if (busqueda) {
     // Se normaliza quitando acentos: quien busca "anarquia" espera encontrar

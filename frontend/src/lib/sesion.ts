@@ -1,4 +1,6 @@
 import type { ImagenesServidor } from "@/components/imagenes-del-servidor";
+import type { ServidorConImagenAutomatica } from "@/app/panel/admin/imagenes-automaticas";
+import type { ServidorAdministrable } from "@/app/panel/admin/moderacion-de-servidores";
 import { cookies } from "next/headers";
 
 const API = process.env.API_URL ?? "http://localhost:8080/api/v1";
@@ -79,8 +81,17 @@ export interface FichaServidor {
   tema: string;
   /** Códigos, no nombres: es lo que espera el formulario. */
   modalidades: string[];
+  /** Si acepta jugadores de móvil y consola, vía Geyser (ADR-0030). */
+  soportaBedrock: boolean;
   /** De dónde salen el icono y el banner, y qué hay de cada uno (ADR-0027). */
   imagenes: ImagenesServidor;
+  /**
+   * Por qué está suspendido, si lo está (ADR-0028).
+   *
+   * Su dueño tiene que poder leerlo. Un servidor que desaparece del directorio
+   * sin explicación es un ticket de soporte seguro.
+   */
+  motivoDeSuspension: string | null;
 }
 
 export interface Modalidad {
@@ -224,6 +235,28 @@ export async function patrocinadoresAdmin(): Promise<{
 }> {
   const marcas: PatrocinadorAdmin[] = await traer("/admin/patrocinadores");
   return { marcas, leidoEn: Date.now() };
+}
+
+/**
+ * Servidores cuyas imágenes hemos cogido de su ping, para revisarlas (ADR-0027).
+ *
+ * Solo devuelve los que tienen algo adoptado o están retirados: son los únicos
+ * sobre los que se puede actuar, y una pantalla de moderación que no se recorre
+ * de un vistazo no se usa.
+ */
+export async function imagenesAutomaticasAdmin(): Promise<
+  ServidorConImagenAutomatica[]
+> {
+  return traer("/admin/servidores/imagenes-automaticas");
+}
+
+/**
+ * Todos los servidores vivos, para moderar (ADR-0028).
+ *
+ * Los suspendidos vienen primero: son los que necesitan una decisión.
+ */
+export async function servidoresAdmin(): Promise<ServidorAdministrable[]> {
+  return traer("/admin/servidores");
 }
 
 export interface ReglasDeVoto {

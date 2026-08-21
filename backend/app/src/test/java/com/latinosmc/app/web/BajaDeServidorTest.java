@@ -92,6 +92,9 @@ class BajaDeServidorTest {
                 null,
                 null,
                 null,
+                false,
+                // Suspension (ADR-0028) y Bedrock (ADR-0030): irrelevantes aqui.
+                null,
                 false);
     }
 

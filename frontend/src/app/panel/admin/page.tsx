@@ -1,9 +1,11 @@
 import { Tarjeta } from "@/components/ui";
 import {
   ajustesDelSitioAdmin,
+  imagenesAutomaticasAdmin,
   ingresos,
   patrocinadoresAdmin,
   reglasDeVoto,
+  servidoresAdmin,
   slotsConfigurables,
   soyAdministrador,
   todosLosPedidos,
@@ -14,6 +16,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AvisoDeCambioDePrecio, EditorDeSlots } from "./editor-de-slots";
 import { EditorDeMetadatos } from "./editor-de-metadatos";
+import { ImagenesAutomaticas } from "./imagenes-automaticas";
+import { ModeracionDeServidores } from "./moderacion-de-servidores";
 import { GestionDePatrocinadores } from "./patrocinadores";
 import { ReglasDeVotoEditor } from "./reglas-de-voto";
 
@@ -35,16 +39,27 @@ export default async function PaginaAdministracion() {
     notFound();
   }
 
-  const [slots, pedidos, totales, marcas, voto, metadatos, sitioPublico] =
-    await Promise.all([
-      slotsConfigurables(),
-      todosLosPedidos(),
-      ingresos(),
-      patrocinadoresAdmin(),
-      reglasDeVoto(),
-      ajustesDelSitioAdmin(),
-      ajustesDelSitio(),
-    ]);
+  const [
+    slots,
+    pedidos,
+    totales,
+    marcas,
+    voto,
+    metadatos,
+    sitioPublico,
+    imagenesAuto,
+    todosLosServidores,
+  ] = await Promise.all([
+    slotsConfigurables(),
+    todosLosPedidos(),
+    ingresos(),
+    patrocinadoresAdmin(),
+    reglasDeVoto(),
+    ajustesDelSitioAdmin(),
+    ajustesDelSitio(),
+    imagenesAutomaticasAdmin(),
+    servidoresAdmin(),
+  ]);
 
   const pagados = pedidos.filter((p) => p.estado === "PAID").length;
 
@@ -119,6 +134,27 @@ export default async function PaginaAdministracion() {
           patrocinadores={marcas.marcas}
           ahora={marcas.leidoEn}
         />
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-1 font-semibold">Servidores</h2>
+        <p className="mb-3 text-sm text-muted text-pretty">
+          Suspender saca al servidor del directorio, del ranking, de la búsqueda
+          y deja de aceptarle votos. No borra nada: al reactivarlo vuelve
+          exactamente como estaba. El motivo lo lee su dueño en su panel.
+        </p>
+        <ModeracionDeServidores servidores={todosLosServidores} />
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-1 font-semibold">Imágenes cogidas de los servidores</h2>
+        <p className="mb-3 text-sm text-muted text-pretty">
+          El icono y el MOTD que anuncia cada servidor, que publicamos en su
+          ficha. Lo escriben sus dueños: si alguno pone algo que no debe, se
+          retira aquí y vuelve al hueco por defecto. Retirar las imágenes no
+          suspende el servidor ni le toca los votos.
+        </p>
+        <ImagenesAutomaticas servidores={imagenesAuto} />
       </section>
 
       <section>

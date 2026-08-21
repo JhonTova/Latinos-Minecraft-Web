@@ -1,4 +1,8 @@
 import { CopiarIp } from "@/components/copiar-ip";
+import {
+  EtiquetaBedrock,
+  EtiquetaDeCuenta,
+} from "@/components/etiquetas-de-cuenta";
 import type { ServidorEnRanking } from "@/lib/tipos";
 import Link from "next/link";
 
@@ -28,8 +32,16 @@ export function FilaServidor({
     servidor.estado !== "OFFLINE" && servidor.jugadoresConectados !== null;
 
   return (
+    /* `@container`: la fila se adapta a SU PROPIO ancho, no al de la pantalla.
+       Es lo que arregla el ranking partido en dos (ADR-0030). Con `sm:` y demás,
+       la fila miraba el ancho del navegador: en una pantalla de 1440 creía tener
+       sitio de sobra y se colocaba en horizontal dentro de una columna de 540,
+       donde las etiquetas acababan encima de las cifras.
+
+       El mismo componente sirve ahora para la columna estrecha del top doble y
+       para el listado a lo ancho, sin una variante aparte que mantener. */
     <li
-      className={`group relative overflow-hidden rounded-lg border bg-surface transition-colors ${
+      className={`group relative @container overflow-hidden rounded-lg border bg-surface transition-colors ${
         destacado
           ? "border-primary/40 shadow-sm"
           : "border-border hover:border-border-strong"
@@ -41,7 +53,15 @@ export function FilaServidor({
         </span>
       )}
 
-      <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex flex-col gap-3 p-3 @lg:flex-row @lg:items-center @lg:gap-4">
+        {/* Puesto, icono y nombre van juntos en una sola línea cuando la fila es
+            estrecha. Sin este envoltorio, el número y el icono se quedaban solos
+            ocupando una línea entera en móvil y empujaban todo hacia abajo.
+
+            `@lg:contents` hace que el envoltorio desaparezca del layout cuando
+            hay sitio, así que a lo ancho la fila queda exactamente como estaba:
+            un solo componente para los dos casos, sin duplicar nada. */}
+        <div className="flex min-w-0 items-center gap-3 @lg:contents">
         {/* --- Puesto e icono ------------------------------------------- */}
         <div className="flex shrink-0 items-center gap-3">
           <span
@@ -98,10 +118,14 @@ export function FilaServidor({
 
           <Etiquetas servidor={servidor} />
         </div>
+        </div>
 
         {/* --- Banner ---------------------------------------------------- */}
+        {/* El banner necesita 320 px suyos. Solo aparece cuando la fila tiene
+            sitio de verdad: en la columna estrecha del top doble se esconde y
+            el nombre se queda con el espacio, que es lo que importa ahí. */}
         {servidor.bannerUrl && (
-          <div className="hidden shrink-0 overflow-hidden rounded-md ring-1 ring-border lg:block">
+          <div className="hidden shrink-0 overflow-hidden rounded-md ring-1 ring-border @3xl:block">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={servidor.bannerUrl}
@@ -114,7 +138,7 @@ export function FilaServidor({
         )}
 
         {/* --- Cifras y acción ------------------------------------------ */}
-        <div className="flex shrink-0 items-center gap-4 sm:gap-5">
+        <div className="flex shrink-0 items-center gap-4 @lg:gap-5">
           <div className="w-16 text-center">
             <div
               className={`cifras text-lg leading-tight font-bold ${enLinea ? "" : "text-subtle"}`}
@@ -135,15 +159,18 @@ export function FilaServidor({
             <div className="text-[11px] text-subtle">votos</div>
           </div>
 
-          <div className="relative z-10 hidden sm:block">
+          {/* Copiar la IP al lado de las cifras solo cuando cabe sin apretar.
+              Si no, baja a su propia línea abajo, que es donde de verdad se ve. */}
+          <div className="relative z-10 hidden @2xl:block">
             <CopiarIp direccion={servidor.direccion} compacto />
           </div>
         </div>
       </div>
 
-      {/* En móvil la IP va abajo, a lo ancho: es lo que viene a buscar el
-          visitante y en una columna estrecha no cabe al lado de las cifras. */}
-      <div className="relative z-10 border-t border-border px-3 py-2 sm:hidden">
+      {/* Cuando la fila es estrecha, la IP va abajo a lo ancho: es lo que viene
+          a buscar el visitante y no puede quedarse escondida por falta de sitio.
+          Vale igual para el móvil que para la columna del top doble. */}
+      <div className="relative z-10 border-t border-border px-3 py-2 @2xl:hidden">
         <CopiarIp direccion={servidor.direccion} compacto />
       </div>
     </li>
@@ -163,10 +190,16 @@ function Etiquetas({ servidor }: { servidor: ServidorEnRanking }) {
       ? `${servidor.versionMinima} – ${servidor.versionMaxima}`
       : (servidor.versionMinima ?? servidor.versionMaxima);
 
-  if (servidor.modalidades.length === 0 && !versiones) return null;
-
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-1">
+      {/* El tipo de cuenta va PRIMERO, antes que la modalidad y la versión.
+          No es jerarquía visual por gusto: si el jugador no tiene cuenta
+          original, un servidor premium no es que le convenga menos, es que no
+          puede entrar. Es el dato que más le ahorra un clic perdido. */}
+      <EtiquetaDeCuenta aceptaNoPremium={servidor.aceptaNoPremium} tamano="pequena" />
+
+      {servidor.soportaBedrock && <EtiquetaBedrock tamano="pequena" />}
+
       {servidor.modalidades.slice(0, 3).map((modalidad) => (
         <span
           key={modalidad}

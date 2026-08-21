@@ -33,6 +33,10 @@ const RUTAS_PERMITIDAS: RegExp[] = [
   // patrón: sin eso, este comodín abriría la puerta a cualquier subruta.
   /^servers\/[0-9a-f-]{36}$/i,
   /^servers\/[0-9a-f-]{36}\/imagenes\/(icono|banner)$/i,
+  // Elegir entre la imagen automática y la subida, y pedir una lectura del ping
+  // en el momento (ADR-0027).
+  /^servers\/[0-9a-f-]{36}\/imagenes\/(icono|banner)\/origen$/i,
+  /^servers\/[0-9a-f-]{36}\/imagenes\/automaticas\/actualizar$/i,
   // Compra de espacios destacados. `confirmar` es el paso de captura que PayPal
   // exige cuando el usuario vuelve de pagar.
   /^pagos\/(slots|pedidos|confirmar)$/,
@@ -46,6 +50,15 @@ const RUTAS_PERMITIDAS: RegExp[] = [
   /^admin\/sitio\/(imagen|logo)$/,
   /^admin\/slots\/[1-5]$/,
   /^admin\/patrocinadores\/[0-9a-f-]{36}\/(aprobar|retirar)$/i,
+  // Retirada de imágenes automáticas. Es la mitad que hace aceptable adoptar
+  // contenido de terceros al instante (ADR-0027): sin una forma de quitarlo, la
+  // política elegida no existe.
+  /^admin\/servidores\/imagenes-automaticas$/,
+  /^admin\/servidores\/[0-9a-f-]{36}\/imagenes-automaticas\/(bloquear|desbloquear)$/i,
+  // Moderación de servidores (ADR-0028). Que la ruta esté aquí no da acceso a
+  // nada: el backend comprueba el permiso en cada endpoint.
+  /^admin\/servidores$/,
+  /^admin\/servidores\/[0-9a-f-]{36}\/(suspender|levantar-suspension)$/i,
 ];
 
 async function proxy(peticion: NextRequest, ruta: string[]) {

@@ -34,6 +34,8 @@ export interface FichaPublica {
    * tampoco.
    */
   motd: string | null;
+  /** Si se puede jugar desde móvil o consola. Lo declara el dueño (ADR-0030). */
+  soportaBedrock: boolean;
 }
 
 /** Ficha pública de un servidor. Devuelve `null` si no existe o no está activo. */
@@ -94,6 +96,8 @@ interface RankingDto {
   jugadoresMaximo: number | null;
   enLinea: boolean;
   tendencia: number[];
+  aceptaNoPremium: boolean;
+  soportaBedrock: boolean;
 }
 
 /**
@@ -105,6 +109,26 @@ interface RankingDto {
  */
 export async function obtenerRanking(): Promise<ServidorEnRanking[]> {
   return pedirRanking();
+}
+
+/**
+ * Las dos clasificaciones separadas de la portada (ADR-0030).
+ *
+ * `premium` son los que **solo** admiten cuentas originales; `mixto`, los que
+ * admiten también cuentas no premium.
+ *
+ * Se piden en paralelo: son dos consultas independientes y encadenarlas
+ * duplicaría el tiempo de la portada sin ganar nada.
+ */
+export async function obtenerTopsSeparados(): Promise<{
+  premium: ServidorEnRanking[];
+  mixto: ServidorEnRanking[];
+}> {
+  const [premium, mixto] = await Promise.all([
+    pedirRanking(undefined, { cuentas: "premium", limite: 15 }),
+    pedirRanking(undefined, { cuentas: "todas", limite: 15 }),
+  ]);
+  return { premium, mixto };
 }
 
 /**
@@ -120,12 +144,19 @@ export async function obtenerRankingDe(
   return pedirRanking(modalidad);
 }
 
-async function pedirRanking(modalidad?: string): Promise<ServidorEnRanking[]> {
-  const filtro = modalidad
-    ? `&modalidad=${encodeURIComponent(modalidad)}`
-    : "";
+async function pedirRanking(
+  modalidad?: string,
+  opciones?: { cuentas?: "premium" | "todas"; bedrock?: boolean; limite?: number },
+): Promise<ServidorEnRanking[]> {
+  const parametros = new URLSearchParams({
+    dias: "7",
+    limite: String(opciones?.limite ?? 50),
+  });
+  if (modalidad) parametros.set("modalidad", modalidad);
+  if (opciones?.cuentas) parametros.set("cuentas", opciones.cuentas);
+  if (opciones?.bedrock) parametros.set("bedrock", "true");
 
-  const respuesta = await fetch(`${API}/ranking?dias=7&limite=50${filtro}`, {
+  const respuesta = await fetch(`${API}/ranking?${parametros}`, {
     next: { revalidate: 60 },
   });
 
@@ -155,6 +186,8 @@ async function pedirRanking(modalidad?: string): Promise<ServidorEnRanking[]> {
     estado: d.enLinea ? "ACTIVE" : "OFFLINE",
     votosSemana: d.votos,
     tendencia: d.tendencia,
+    aceptaNoPremium: d.aceptaNoPremium,
+    soportaBedrock: d.soportaBedrock,
   }));
 }
 

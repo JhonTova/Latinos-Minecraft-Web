@@ -77,14 +77,30 @@
     --oro-400: oklch(0.8 0.15 85);
     --oro-600: oklch(0.66 0.145 75);
 
+    /* El oro legible sobre blanco. El 400 da 1,89:1 —invisible— y el 600 se
+       queda en 3,18:1: los dos valen como FONDO, con texto oscuro encima (la
+       medalla del primer puesto lo usa asi), pero ninguno vale como texto.
+       Este da 4,55:1 y sigue leyendose como oro. */
+    --oro-700: oklch(0.535 0.15 85);
+
     /* --- Estado ------------------------------------------------------------
        No son decorativos: comunican consecuencias. Nunca se usa solo el color
        para transmitir informacion (accesibilidad): siempre acompanado de texto
-       o icono. */
-    --success: oklch(0.66 0.15 150);
-    --warning: oklch(0.76 0.145 75);
-    --danger: oklch(0.605 0.205 27);
-    --info: oklch(0.63 0.14 245);
+       o icono.
+
+       ESTOS VALORES SON LOS DEL TEMA CLARO Y SE REDEFINEN EN EL OSCURO.
+       No es duplicar por duplicar: un mismo color no puede servir para las dos
+       cosas. Los valores vivos de antes se leian bien sobre fondo oscuro pero
+       sobre blanco daban 2,2:1 el de aviso y 2,9:1 el de exito — muy por debajo
+       del 4,5:1 que exige WCAG AA— y se usan en texto pequeño (`text-xs`), que
+       es el peor caso posible.
+
+       Medidos sobre su propio fondo al 10%, que es como se usan de verdad en el
+       componente Aviso, no sobre blanco puro. */
+    --success: oklch(0.515 0.15 150);
+    --warning: oklch(0.54 0.145 75);
+    --danger: oklch(0.555 0.205 27);
+    --info: oklch(0.5 0.14 245);
 
     /* --- Tema claro (por defecto) ----------------------------------------- */
     --bg: var(--neutral-50);
@@ -93,14 +109,20 @@
     --surface-sunken: var(--neutral-100);
 
     /* El tono tierra, solo para detalles. Ver la nota en la escala de arriba. */
-    --secundario: var(--oro-400);
+    /* El tono tierra, solo para detalles. Ver la nota en la escala de arriba.
+       En claro se usa el 700 porque este token SI acaba siendo texto —la
+       etiqueta de "móvil y consola"—, y el 400 ahi no se ve. */
+    --secundario: var(--oro-700);
 
     --border: var(--neutral-200);
     --border-strong: var(--neutral-300);
 
     --text: var(--neutral-900);
     --text-muted: var(--neutral-600);
-    --text-subtle: var(--neutral-500);
+    /* Un pelo mas oscuro que neutral-500, que se quedaba en 4,43:1 sobre el
+       fondo claro. Por cuatro centesimas, pero es la diferencia entre cumplir
+       AA y no cumplirlo. */
+    --text-subtle: oklch(0.56 0.018 300);
     --text-on-accent: oklch(1 0 0);
 
     --primary: var(--accent-600);
@@ -154,7 +176,17 @@
 
       --text: var(--neutral-100);
       --text-muted: var(--neutral-400);
-      --text-subtle: var(--neutral-500);
+      /* Un punto mas claro que neutral-500: sobre el fondo oscuro ese se
+         quedaba en 4,43:1, igual que pasaba en el tema claro por el otro lado. */
+      --text-subtle: oklch(0.575 0.018 300);
+
+      /* Los de estado se invierten: sobre fondo oscuro hacen falta vivos, y los
+         del tema claro se quedarian en 3,3:1. Es el mismo motivo por el que
+         estan separados, al reves. */
+      --success: oklch(0.66 0.15 150);
+      --warning: oklch(0.76 0.145 75);
+      --danger: oklch(0.68 0.19 27);
+      --info: oklch(0.7 0.13 245);
 
       --primary: oklch(0.7 0.2 300);
       --primary-hover: oklch(0.79 0.16 300);
@@ -183,7 +215,17 @@
 
     --text: var(--neutral-100);
     --text-muted: var(--neutral-400);
-    --text-subtle: var(--neutral-500);
+    /* Un punto mas claro que neutral-500: sobre el fondo oscuro ese se quedaba
+       en 4,43:1, igual que pasaba en el tema claro por el otro lado. */
+    --text-subtle: oklch(0.575 0.018 300);
+
+    /* Los de estado se invierten: sobre fondo oscuro hacen falta vivos, y los
+       del tema claro se quedarian en 3,3:1. Es el mismo motivo por el que estan
+       separados, al reves. */
+    --success: oklch(0.66 0.15 150);
+    --warning: oklch(0.76 0.145 75);
+    --danger: oklch(0.68 0.19 27);
+    --info: oklch(0.7 0.13 245);
 
     --primary: oklch(0.7 0.2 300);
     --primary-hover: oklch(0.79 0.16 300);

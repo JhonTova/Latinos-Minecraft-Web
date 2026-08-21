@@ -64,12 +64,15 @@ public class RankingController {
     public ResponseEntity<List<ServidorEnRanking>> ranking(
             @RequestParam(defaultValue = "7") int dias,
             @RequestParam(defaultValue = "50") int limite,
-            @RequestParam(required = false) String modalidad) {
+            @RequestParam(required = false) String modalidad,
+            @RequestParam(required = false) String cuentas,
+            @RequestParam(required = false) Boolean bedrock) {
 
         int diasSeguros = Math.clamp(dias, 1, 30);
         int limiteSeguro = Math.clamp(limite, 1, LIMITE_MAXIMO);
 
-        var crudas = consultas.ranking(diasSeguros, limiteSeguro, modalidadValida(modalidad));
+        var crudas = consultas.ranking(
+                diasSeguros, limiteSeguro, modalidadValida(modalidad), soloPremium(cuentas), bedrock);
 
         // Las modalidades de todos de una vez. Pedirlas por servidor serian
         // cincuenta consultas para pintar cincuenta tarjetas: el problema N+1,
@@ -89,12 +92,34 @@ public class RankingController {
                         f.votos(),
                         f.jugadoresConectados(),
                         Boolean.TRUE.equals(f.enLinea()),
-                        consultas.tendenciaDiaria(f.id(), DIAS_POR_DEFECTO)))
+                        consultas.tendenciaDiaria(f.id(), DIAS_POR_DEFECTO),
+                        f.aceptaNoPremium(),
+                        f.soportaBedrock()))
                 .toList();
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofSeconds(60)).cachePublic())
                 .body(filas);
+    }
+
+    /**
+     * Traduce el parametro publico al filtro de la consulta.
+     *
+     * <p>{@code premium} son los servidores que <em>solo</em> admiten cuentas
+     * originales; {@code todas} los que admiten tambien no premium. Cualquier otro
+     * valor —incluida su ausencia— devuelve null y no separa nada, que es el
+     * comportamiento seguro: enseñar de mas nunca deja a un servidor fuera de la
+     * lista por un parametro mal escrito.
+     */
+    private static Boolean soloPremium(String cuentas) {
+        if (cuentas == null) {
+            return null;
+        }
+        return switch (cuentas.toLowerCase()) {
+            case "premium" -> Boolean.TRUE;
+            case "todas" -> Boolean.FALSE;
+            default -> null;
+        };
     }
 
     /**
@@ -125,5 +150,16 @@ public class RankingController {
             long votos,
             Integer jugadoresConectados,
             boolean enLinea,
-            List<Long> tendencia) {}
+            List<Long> tendencia,
+            /**
+             * Si admite cuentas no premium (ADR-0030).
+             *
+             * <p>Decide en cual de las dos clasificaciones sale y que etiqueta se
+             * le pinta. Para el jugador es el dato mas util de la ficha despues de
+             * la direccion: si no tiene cuenta original, un servidor premium no es
+             * que le convenga menos, es que no puede entrar.
+             */
+            boolean aceptaNoPremium,
+            /** Si acepta movil y consola. Declarado por el dueño, no verificado. */
+            boolean soportaBedrock) {}
 }

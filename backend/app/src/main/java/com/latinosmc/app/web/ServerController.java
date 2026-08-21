@@ -156,6 +156,7 @@ public class ServerController {
                 servidores.modalidadesDe(detalle.id()).stream()
                         .map(com.latinosmc.servers.ServerRepository.Modalidad::codigo)
                         .toList(),
+                detalle.soportaBedrock(),
                 new Imagenes(
                         detalle.iconoAutomatico(),
                         detalle.bannerAutomatico(),
@@ -164,7 +165,8 @@ public class ServerController {
                         urlDe(detalle.claveIconoSubido()),
                         urlDe(detalle.claveBannerSubido()),
                         detalle.motdJson(),
-                        detalle.imagenesAutomaticasBloqueadas()));
+                        detalle.imagenesAutomaticasBloqueadas()),
+                detalle.motivoDeSuspension());
     }
 
     /** Catalogo de modalidades. Publico: es una lista fija, no revela nada. */
@@ -200,7 +202,8 @@ public class ServerController {
                 recortar(peticion.versionMinima(), 12),
                 recortar(peticion.versionMaxima(), 12),
                 recortar(peticion.region(), 40),
-                peticion.tema() == null || peticion.tema().isBlank() ? "DEFECTO" : peticion.tema());
+                peticion.tema() == null || peticion.tema().isBlank() ? "DEFECTO" : peticion.tema(),
+                Boolean.TRUE.equals(peticion.soportaBedrock()));
 
         servidores.reemplazarModalidades(
                 servidorId, peticion.modalidades() == null ? List.of() : peticion.modalidades());
@@ -348,7 +351,17 @@ public class ServerController {
             String region,
             String tema,
             List<String> modalidades,
-            Imagenes imagenes) {}
+            /** Acepta movil y consola. Lo declara el dueño (ADR-0030). */
+            boolean soportaBedrock,
+            Imagenes imagenes,
+            /**
+             * Por que esta suspendido, si lo esta (ADR-0028).
+             *
+             * <p>Se le dice al dueño. Un servidor que desaparece del directorio sin
+             * explicacion es un ticket de soporte garantizado y la sensacion de que
+             * la plataforma es arbitraria.
+             */
+            String motivoDeSuspension) {}
 
     /**
      * Estado de las imagenes del servidor, para la pantalla que las gestiona
@@ -391,7 +404,16 @@ public class ServerController {
             @jakarta.validation.constraints.Size(max = 12) String versionMaxima,
             @jakarta.validation.constraints.Size(max = 40) String region,
             @jakarta.validation.constraints.Size(max = 20) String tema,
-            @jakarta.validation.constraints.Size(max = 8) List<String> modalidades) {}
+            @jakarta.validation.constraints.Size(max = 8) List<String> modalidades,
+            /**
+             * Si acepta jugadores de movil y consola (normalmente via Geyser).
+             *
+             * <p>Objeto y no primitivo: con {@code boolean}, un cliente que no
+             * mande el campo lo pondria en false sin querer y desmarcaria la
+             * casilla del dueño. Con {@code Boolean} se distingue "no lo manda"
+             * de "lo manda en false".
+             */
+            Boolean soportaBedrock) {}
 
     public record ServidorPropio(
             UUID id,
