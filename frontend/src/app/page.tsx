@@ -12,19 +12,16 @@ import {
 } from "@/components/fila-servidor";
 import { FranjaDeCifras, LlamadaParaDuenos } from "@/components/franjas";
 import {
-  RailDeMarcas,
-  TiraDeMarcas,
-  repartirEnRailes,
+  BandaDePatrocinadores,
+  RailDePatrocinadores,
 } from "@/components/patrocinadores";
 import { Heroe } from "@/components/heroe";
-import { TarjetaDestacado } from "@/components/tarjeta-destacado";
+import { ServidoresPatrocinados } from "@/components/servidores-patrocinados";
 import {
   ajustesDelSitio,
-  destacadosDePortada,
   estadisticas,
   obtenerTopsSeparados,
   patrocinadores,
-  type SlotEnPortada,
 } from "@/lib/api";
 import type { ServidorEnRanking } from "@/lib/tipos";
 import { TopsSeparados } from "@/components/tops-separados";
@@ -50,24 +47,17 @@ import { Suspense } from "react";
  * se vean más», la respuesta es no: el ranking vale porque no se puede comprar,
  * y eso es el producto.
  *
- * **Las marcas patrocinadoras van a los lados**, no en una fila perdida al
- * final. En pantalla ancha sobra sitio a izquierda y derecha, y un banner
- * vertical ahí acompaña al visitante mientras recorre el ranking. Empiezan a la
- * altura de los servidores y no del titular: la publicidad no se pone por
- * delante de lo que la gente ha venido a ver.
+ * **Los patrocinadores no tocan la forma de la página.** En pantallas de 1600 px
+ * o más van en un raíl colgado del margen derecho; por debajo, en una banda tras
+ * el ranking. La columna de contenido mide lo mismo en los dos casos, se hayan
+ * vendido banners o no.
  */
 export default async function Page() {
   const [sitio, cifras, marcas] = await Promise.all([
     ajustesDelSitio(),
     estadisticas(),
-    // Se pide aquí y no dentro de un Suspense porque decide la FORMA de la
-    // página: con marcas hay tres columnas, sin ellas una. Resolverlo después
-    // significaría mover el contenido cuando ya se está leyendo.
     patrocinadores().catch(() => []),
   ]);
-
-  const { izquierda, derecha } = repartirEnRailes(marcas);
-  const conRailes = marcas.length > 0;
 
   return (
     <>
@@ -79,158 +69,37 @@ export default async function Page() {
 
       <Heroe nombre={sitio.nombre} logoUrl={sitio.logoUrl} cifras={cifras} />
 
-      {/* 96rem = los 72rem del contenido más los dos raíles con su separación.
-          Así, en pantallas grandes, la columna central mide exactamente lo mismo
-          que el héroe de arriba y nada se desalinea. */}
-      <div
-        className={`mx-auto w-full flex-1 px-4 pb-20 sm:px-6 ${
-          conRailes ? "max-w-[96rem]" : "max-w-6xl"
-        }`}
-      >
-        <div
-          className={
-            conRailes
-              ? "grid gap-6 2xl:grid-cols-[9rem_minmax(0,1fr)_9rem]"
-              : ""
-          }
-        >
-          {conRailes && <RailDeMarcas marcas={izquierda} lado="izquierda" />}
+      {/* Mismo ancho que el héroe de arriba, haya patrocinadores o no: la
+          portada no puede cambiar de forma según lo que se haya vendido.
+          `relative` es lo que ancla el raíl a este margen. */}
+      <div className="relative mx-auto w-full max-w-6xl flex-1 px-4 pb-20 sm:px-6">
+        <RailDePatrocinadores marcas={marcas} />
 
-          <main className="mx-auto w-full max-w-6xl min-w-0 space-y-10">
-            <Suspense fallback={null}>
-              <Destacados />
-            </Suspense>
+        <main className="w-full min-w-0 space-y-10">
+          <Suspense fallback={null}>
+            <ServidoresPatrocinados variante="portada" />
+          </Suspense>
 
-            <FranjaDeCifras cifras={cifras} />
+          <FranjaDeCifras cifras={cifras} />
 
-            {/* Los dos rankings ocupan el ancho completo de la columna. Antes la
-                barra lateral compartía fila con ellos; con DOS listas al lado,
-                cada una se quedaba en unos 380 píxeles y las filas —icono,
-                nombre, etiquetas, votos— dejan de leerse ahí. */}
-            <Suspense fallback={<RankingCargando />}>
-              <Ranking />
-            </Suspense>
+          {/* Los dos rankings ocupan el ancho completo de la columna. Antes la
+              barra lateral compartía fila con ellos; con DOS listas al lado,
+              cada una se quedaba en unos 380 píxeles y las filas —icono,
+              nombre, etiquetas, votos— dejan de leerse ahí. */}
+          <Suspense fallback={<RankingCargando />}>
+            <Ranking />
+          </Suspense>
 
-            <BarraLateral disposicion="fila" llamadaParaDuenos={false} />
+          <BarraLateral disposicion="fila" llamadaParaDuenos={false} />
 
-            {/* Solo cuando no caben los raíles; se esconde con 2xl:hidden. */}
-            <TiraDeMarcas marcas={marcas} />
+          <BandaDePatrocinadores marcas={marcas} />
 
-            <LlamadaParaDuenos />
-          </main>
-
-          {conRailes && <RailDeMarcas marcas={derecha} lado="derecha" />}
-        </div>
+          <LlamadaParaDuenos />
+        </main>
       </div>
 
       <PieDePagina />
     </>
-  );
-}
-
-/* ========================================================================== */
-
-/**
- * Bloque de espacios comprados (ADR-0013).
- *
- * Va dentro de su propio marco tintado, con encabezado y etiqueta de publicidad.
- * Que sea un recuadro entero y no unas tarjetas sueltas es lo que hace que la
- * separación respecto al ranking se vea de un vistazo, sin tener que leer nada.
- */
-async function Destacados() {
-  await connection();
-  const slots = await destacadosDePortada().catch((): SlotEnPortada[] => []);
-  // `!= null` con doble igual, no `!==`: descarta null Y undefined de una vez.
-  // Es el caso que rompio la portada — un campo ausente no es null, y el filtro
-  // dejaba pasar los huecos vacios para reventar dos lineas mas abajo.
-  const ocupados = slots.filter((s) => s.servidor != null);
-  const libres = slots.filter((s) => s.servidor == null);
-
-  // Con la plataforma vacía se enseña UN solo hueco como oferta, no los seis.
-  // Seis recuadros vacíos en lo primero que se ve son un cartel de «aquí no hay
-  // nada»; uno solo se lee como una invitación.
-  //
-  // Con espacios vendidos se completan filas: como van de dos en dos, un hueco
-  // impar dejaría la última fila coja, y eso se lee como un fallo de
-  // maquetación en vez de como el espacio libre que es.
-  const huecos =
-    ocupados.length === 0
-      ? Math.min(libres.length, 1)
-      : Math.min(libres.length, ocupados.length % 2 === 1 ? 1 : 2);
-
-  if (ocupados.length === 0 && huecos === 0) {
-    return null;
-  }
-
-  return (
-    <section
-      aria-labelledby="titulo-destacados"
-      className="rounded-2xl border border-primary/20 bg-primary-subtle/30 p-4 sm:p-5"
-    >
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <div className="flex items-center gap-2.5">
-          <h2 id="titulo-destacados" className="display text-lg font-semibold">
-            Servidores patrocinados
-          </h2>
-          {/* La etiqueta es texto real, no solo un color: quien no distingue
-              colores también tiene que poder saber que esto es publicidad. */}
-          <span className="nav-display rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[9px] text-primary">
-            Publicidad
-          </span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <p className="text-xs text-subtle">
-            Espacios comprados. No cuentan para el ranking.
-          </p>
-          <Link
-            href="/panel/destacar"
-            className="enlace-vivo text-sm font-medium text-primary"
-          >
-            Destacar el mío
-          </Link>
-        </div>
-      </header>
-
-      {/* Dos por fila y no tres: con tres, el banner y la descripción se quedan
-          sin ancho y la tarjeta deja de valer más que una fila del ranking, que
-          es justo por lo que se paga. */}
-      <ul className="grid gap-4 sm:grid-cols-2">
-        {ocupados.map((slot) => (
-          <TarjetaDestacado
-            key={slot.posicion}
-            posicion={slot.posicion}
-            servidor={slot.servidor!}
-          />
-        ))}
-
-        {libres.slice(0, huecos).map((slot) => (
-          <HuecoLibre key={slot.posicion} slot={slot.posicion} />
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-/** Espacio sin vender. Se enseña como oferta, no como error. */
-function HuecoLibre({ slot }: { slot: number }) {
-  return (
-    <li className="flex">
-      <Link
-        href={`/panel/destacar?slot=${slot}`}
-        className="group flex min-h-[248px] flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-primary/30 p-6 text-center transition-colors hover:border-primary hover:bg-primary-subtle/60"
-      >
-        <span className="grid size-11 place-items-center rounded-xl border border-dashed border-primary/40 text-xl text-primary/70 transition-colors group-hover:border-primary group-hover:text-primary">
-          +
-        </span>
-        <span className="display mt-1 font-semibold transition-colors group-hover:text-primary">
-          Espacio {slot} libre
-        </span>
-        <span className="max-w-[24ch] text-sm text-subtle text-pretty">
-          Coloca aquí tu servidor y sale en lo primero que se ve
-        </span>
-      </Link>
-    </li>
   );
 }
 
@@ -331,8 +200,7 @@ function CabeceraDelRanking() {
             Ranking de servidores
           </h2>
           <p className="mt-0.5 text-sm text-muted text-pretty">
-            Por votos verificados de los últimos 7 días. Nadie compra un puesto
-            aquí.
+            Por votos verificados de los últimos 7 días.
           </p>
         </div>
 

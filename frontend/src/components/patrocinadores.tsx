@@ -8,16 +8,24 @@ import { patrocinadores, type Patrocinador } from "@/lib/api";
  *
  *   - Ranking → orgánico, se gana votando
  *   - Servidores patrocinados → los compra un dueño de servidor
- *   - Marcas patrocinadoras → empresas ajenas al ranking
+ *   - Patrocinadores → empresas ajenas al ranking
  *
  * Mezclar cualquiera de las tres confundiría al visitante sobre qué está
  * mirando, y eso es exactamente lo que hace que un directorio deje de ser fiable.
  *
- * **Dónde se pintan.** En pantalla ancha, en los raíles laterales, a la altura
- * de las listas de servidores y no antes: quien acaba de entrar todavía está
- * buscando dónde jugar, y un anuncio por delante de eso estorba. Cuando no caben
- * los raíles, bajan a una tira compacta bajo el ranking. La misma información,
- * el sitio que permita cada pantalla.
+ * **Dónde se pintan.** Dos formas, nunca las dos a la vez:
+ *
+ *   - **Raíl derecho** con banners verticales, a partir de 1600 px de ancho.
+ *     Es lo que se vende como banner 160×600 y el único sitio donde ese formato
+ *     cabe entero. Va *fuera* de la columna de contenido, colgado del margen
+ *     derecho: así el ranking sigue midiendo lo mismo y alineado con el héroe
+ *     haya patrocinadores o no. Antes había dos raíles y la portada cambiaba de
+ *     forma según lo vendido; con uno solo, el contenido no se entera.
+ *   - **Banda** bajo el ranking en todo lo demás, con tarjetas de logotipo. Por
+ *     debajo de 1600 px no hay margen físico donde meter un raíl sin robarle
+ *     ancho a la lista, que es a lo que la gente ha venido.
+ *
+ * En ambos casos después del ranking o a su altura, nunca por delante.
  *
  * Los enlaces llevan `rel="sponsored nofollow noopener"`:
  * - `sponsored` es lo que Google exige declarar en un enlace pagado. Omitirlo
@@ -25,63 +33,42 @@ import { patrocinadores, type Patrocinador } from "@/lib/api";
  * - `noopener` impide que la página de destino manipule la nuestra.
  */
 
-/** Cuántas marcas caben en un raíl sin que haya que hacer scroll para verlas. */
-const POR_RAIL = 3;
+/** Cuántas marcas caben en el raíl sin que haya que hacer scroll para verlas. */
+const POR_RAIL = 4;
 
 /**
- * Reparte las marcas entre los dos raíles, alternando.
+ * Raíl derecho de banners verticales, para la portada.
  *
- * Alterna en lugar de cortar por la mitad para que el reparto sea justo: con un
- * corte, las tres primeras irían siempre al lado izquierdo y las últimas al
- * derecho, y el orden de contratación acabaría decidiendo quién queda arriba en
- * la columna que primero se mira.
- */
-export function repartirEnRailes(marcas: Patrocinador[]): {
-  izquierda: Patrocinador[];
-  derecha: Patrocinador[];
-} {
-  return {
-    izquierda: marcas.filter((_, i) => i % 2 === 0).slice(0, POR_RAIL),
-    derecha: marcas.filter((_, i) => i % 2 === 1).slice(0, POR_RAIL),
-  };
-}
-
-/**
- * Raíl lateral de banners verticales.
+ * Va posicionado en absoluto sobre el margen del contenedor y no como una
+ * columna más de la rejilla: una columna empujaría al ranking y lo dejaría
+ * descentrado respecto al héroe justo en las pantallas donde más se nota.
  *
  * `sticky` para que acompañe al visitante mientras recorre el ranking, que es
  * justo lo que se vende: un banner que se pierde al primer scroll se ve dos
  * segundos y se cobra una semana.
  *
- * Marcado como `aria-hidden` **no**: es contenido real y quien navega con lector
- * de pantalla tiene derecho a saber que ahí hay publicidad. Lo que hace es
- * anunciarse como tal, con un encabezado que lo dice.
+ * No se esconde de los lectores de pantalla: es contenido real, y quien navega
+ * con uno tiene derecho a saber que ahí hay patrocinadores. Lo que hace es
+ * anunciarse como tales.
  */
-export function RailDeMarcas({
-  marcas,
-  lado,
-}: {
-  marcas: Patrocinador[];
-  lado: "izquierda" | "derecha";
-}) {
+export function RailDePatrocinadores({ marcas }: { marcas: Patrocinador[] }) {
   if (marcas.length === 0) {
-    return <div className="hidden 2xl:block" aria-hidden />;
+    return null;
   }
 
   return (
     <aside
-      aria-label={`Publicidad (${lado})`}
-      // 2xl y no xl: a 1280 px los raíles le quitan 240 al centro, y ahí las
-      // filas del ranking dejan de caber en una línea. La publicidad no puede
-      // estropear la lista que la gente ha venido a leer.
-      className="hidden 2xl:block"
+      aria-label="Patrocinadores"
+      // 1600 px y no 2xl (1536): a 1536 el raíl se come el aire del contenedor
+      // y queda pegado al borde de la ventana. Por debajo de eso manda la banda.
+      className="absolute inset-y-0 left-full ml-6 hidden w-40 min-[1600px]:block"
     >
       {/* top-28: la cabecera es sticky y mide 4rem más la barra de cifras. Sin
           este margen, el primer banner se metería debajo de ella al bajar. */}
       <div className="sticky top-28 space-y-3">
-        <p className="nav-display text-[9px] text-subtle">Publicidad</p>
+        <p className="nav-display text-[9px] text-subtle">Patrocinadores</p>
 
-        {marcas.map((marca) => (
+        {marcas.slice(0, POR_RAIL).map((marca) => (
           <BannerVertical key={marca.id} marca={marca} />
         ))}
       </div>
@@ -118,15 +105,15 @@ function BannerVertical({ marca }: { marca: Patrocinador }) {
 /**
  * Alternativa cuando la marca no ha subido banner.
  *
- * No se deja el hueco vacío ni se esconde el patrocinador: se compone una pieza
+ * No se deja el hueco vacío ni se esconde al patrocinador: se compone una pieza
  * vertical con lo que sí tenemos —logotipo, nombre y dominio—. Una marca que
  * paga tiene que verse aunque nos haya mandado solo un logotipo.
  */
 function SinBanner({ marca }: { marca: Patrocinador }) {
   return (
     <div
-      // Alto mínimo para que un raíl de logotipos no quede raquítico al lado del
-      // otro cuando una marca sí trajo banner y la de enfrente no.
+      // Alto mínimo para que el raíl no quede a saltos cuando una marca trae
+      // banner y la siguiente solo logotipo.
       className="flex min-h-[260px] flex-col items-center justify-center gap-3 px-3 py-6 text-center"
       style={{
         background:
@@ -168,12 +155,13 @@ function SinBanner({ marca }: { marca: Patrocinador }) {
 }
 
 /**
- * Tira compacta, para cuando no hay sitio a los lados.
+ * Banda de patrocinadores, para cuando no hay margen donde colgar el raíl.
  *
- * Va después del ranking, nunca antes: la publicidad no se pone por delante de
- * aquello que la gente ha venido a ver.
+ * Tarjetas con logotipo, nombre y dominio: es lo que toda marca tiene, mientras
+ * que un banner diseñado a medida lo manda una de cada tres. Aquí caben todas,
+ * también las que en el raíl no habrían entrado.
  */
-export function TiraDeMarcas({ marcas }: { marcas: Patrocinador[] }) {
+export function BandaDePatrocinadores({ marcas }: { marcas: Patrocinador[] }) {
   if (marcas.length === 0) {
     return null;
   }
@@ -181,14 +169,13 @@ export function TiraDeMarcas({ marcas }: { marcas: Patrocinador[] }) {
   return (
     <section
       aria-labelledby="titulo-marcas"
-      className="rounded-xl border border-border bg-surface-sunken/50 p-4 2xl:hidden"
+      // Se apaga justo donde aparece el raíl: enseñar las mismas marcas dos
+      // veces en la misma pantalla las devalúa a las dos.
+      className="rounded-xl border border-border bg-surface-sunken/50 p-4 sm:p-5 min-[1600px]:hidden"
     >
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h2 id="titulo-marcas" className="display text-sm font-semibold">
-          Marcas que apoyan LatinosMC
-        </h2>
-        <span className="nav-display text-[9px] text-subtle">Publicidad</span>
-      </div>
+      <h2 id="titulo-marcas" className="display mb-3 text-sm font-semibold">
+        Patrocinadores
+      </h2>
 
       <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
         {marcas.map((marca) => (
@@ -232,14 +219,22 @@ export function TiraDeMarcas({ marcas }: { marcas: Patrocinador[] }) {
   );
 }
 
+/** Banners que se enseñan en la columna lateral antes de pasar a la lista. */
+const BANNERS_EN_LATERAL = 2;
+
 /**
- * Versión estrecha, para la barra lateral de las páginas que la usan como
- * columna de verdad (`/servidores`, `/plugin`).
+ * Versión para la barra lateral de las páginas que la usan como columna de
+ * verdad (`/servidores`, `/plugin`).
  *
- * Sin encabezado grande ni banner: en una columna de 290 píxeles, tres niveles
- * de título hacen que todo parezca igual de importante y nada destaque. Los
- * banners verticales se reservan para los raíles de la portada, que es donde hay
- * sitio para que se vean.
+ * Aquí no hace falta colgar nada del margen: la columna ya existe, mide 290 px
+ * y está a la derecha de la lista. Es el equivalente del raíl de la portada, y
+ * por eso las marcas con banner lo enseñan igual —a su ancho natural de 160 px,
+ * centrado, sin estirarlo: un rascacielos escalado a 290 mediría más de mil
+ * píxeles de alto y echaría de la pantalla a todo lo demás—.
+ *
+ * Las que no trajeron banner van debajo como lista de logotipo y nombre. Se
+ * enseñan las dos primeras con banner y no todas para que la columna no se
+ * convierta en una torre de anuncios por delante de «cómo se vota».
  *
  * Se pide los datos ella misma en lugar de recibirlos: así las páginas que la
  * usan no tienen que saber que existen los patrocinadores.
@@ -251,37 +246,64 @@ export async function MarcasEnLateral() {
     return null;
   }
 
+  const conBanner = marcas
+    .filter((m) => m.bannerUrl)
+    .slice(0, BANNERS_EN_LATERAL);
+  const restantes = marcas.filter((m) => !conBanner.includes(m)).slice(0, 5);
+
   return (
     <section className="rounded-lg border border-border bg-surface-sunken/50 p-4">
-      <div className="mb-3 flex items-baseline justify-between gap-2">
-        <h2 className="display text-sm font-semibold">Marcas que apoyan</h2>
-        <span className="nav-display text-[9px] text-subtle">Publicidad</span>
-      </div>
+      <h2 className="display mb-3 text-sm font-semibold">Patrocinadores</h2>
 
-      <ul className="space-y-1.5">
-        {marcas.slice(0, 5).map((marca) => (
-          <li key={marca.id}>
+      {conBanner.length > 0 && (
+        <div className="mb-3 space-y-3">
+          {conBanner.map((marca) => (
             <a
+              key={marca.id}
               href={marca.urlDestino}
               target="_blank"
               rel="sponsored nofollow noopener"
-              className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-muted transition-colors hover:bg-surface hover:text-text"
+              className="tarjeta-viva mx-auto block w-40 overflow-hidden rounded-lg border border-border bg-surface shadow-sm hover:border-primary/40"
             >
-              {marca.logoUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={marca.logoUrl}
-                  alt=""
-                  width={20}
-                  height={20}
-                  className="size-5 shrink-0 rounded"
-                />
-              )}
-              <span className="truncate">{marca.nombre}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={marca.bannerUrl!}
+                alt={marca.nombre}
+                width={160}
+                height={600}
+                className="aspect-[160/600] w-full object-cover"
+              />
             </a>
-          </li>
-        ))}
-      </ul>
+          ))}
+        </div>
+      )}
+
+      {restantes.length > 0 && (
+        <ul className="space-y-1.5">
+          {restantes.map((marca) => (
+            <li key={marca.id}>
+              <a
+                href={marca.urlDestino}
+                target="_blank"
+                rel="sponsored nofollow noopener"
+                className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-muted transition-colors hover:bg-surface hover:text-text"
+              >
+                {marca.logoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={marca.logoUrl}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="size-5 shrink-0 rounded"
+                  />
+                )}
+                <span className="truncate">{marca.nombre}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

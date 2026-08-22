@@ -88,12 +88,17 @@ export async function generateMetadata(): Promise<Metadata> {
 
     alternates: { canonical: "/" },
 
-    // El favicon sale del logotipo que se sube en administración. Si no hay
-    // ninguno se usa el archivo del proyecto, así que la pestaña nunca queda con
-    // el icono genérico del navegador.
-    icons: sitio.logoUrl
-      ? { icon: sitio.logoUrl, apple: sitio.logoUrl }
-      : undefined,
+    // El favicon sale del logotipo que se sube en administración; si todavía no
+    // hay ninguno, del icono de marca que vive en `public/`.
+    //
+    // **No puede existir `src/app/favicon.ico`.** Next da prioridad a los
+    // iconos por convención de archivo sobre los que se declaran aquí, así que
+    // ese archivo —el que trae la plantilla— tapaba el logotipo subido y dejaba
+    // el icono genérico en la pestaña pasara lo que pasara.
+    icons: {
+      icon: sitio.logoUrl ?? "/icono.svg",
+      apple: sitio.logoUrl ?? "/icono.svg",
+    },
 
     openGraph: {
       type: "website",

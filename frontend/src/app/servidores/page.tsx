@@ -6,6 +6,7 @@ import {
   SinServidores,
 } from "@/components/fila-servidor";
 import { BuscadorDeServidores } from "@/components/buscador";
+import { ServidoresPatrocinados } from "@/components/servidores-patrocinados";
 import { catalogoDeModalidades, obtenerRanking } from "@/lib/api";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -78,6 +79,20 @@ export default async function PaginaServidores(
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_290px] lg:items-start">
           <div className="min-w-0">
+            {/* Encima de los filtros y no dentro de la lista: aquí las filas van
+                numeradas por votos, y una tarjeta pagada metida entre ellas
+                sugeriría que ese puesto se compró. Fuera del listado y con su
+                propio marco, la separación se ve sin leer nada (regla 14).
+
+                El margen va en este envoltorio y no en el bloque: cuando no hay
+                nada vendido, el bloque devuelve null y no puede quedar un hueco
+                de aire delante de los filtros. */}
+            <div className="empty:hidden [&>*]:mb-6">
+              <Suspense fallback={null}>
+                <ServidoresPatrocinados variante="listado" />
+              </Suspense>
+            </div>
+
             <Suspense fallback={<FiltrosCargando />}>
               <Filtros
                 activa={modalidad}

@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
   // vulnerabilidades conocidas probar primero.
   poweredByHeader: false,
 
+  // Muchos rastreadores y lectores de RSS piden `/favicon.ico` a pelo, sin leer
+  // el HTML. Como el icono real se declara en los metadatos (y sale del
+  // logotipo subido en administración), aquí se les da el de marca en vez de un
+  // 404.
+  async rewrites() {
+    return [{ source: "/favicon.ico", destination: "/icono.svg" }];
+  },
+
   async headers() {
     return [
       {

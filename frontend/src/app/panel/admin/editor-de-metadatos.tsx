@@ -121,7 +121,7 @@ export function EditorDeMetadatos({
 
       <SubirImagen
         titulo="Logotipo"
-        descripcion="Se ve en la cabecera y, en grande, en la portada. Hasta 512 px; se conserva la proporción, no se recorta."
+        descripcion="Se ve en la cabecera, en grande en la portada y como icono de la pestaña del navegador. Hasta 512 px; se conserva la proporción, no se recorta."
         actual={logoUrl}
         ruta="/api/backend/admin/sitio/logo"
         vistaPrevia="logo"
