@@ -49,6 +49,13 @@ export function BarraLateral({
           : "space-y-5"
       }
     >
+      {/* Los patrocinadores van los PRIMEROS de la columna, no los últimos.
+          Una marca que paga por que la vean no puede quedar debajo de tres
+          bloques de ayuda, donde solo llega quien hace scroll hasta el final.
+          En la portada esto no aplica: allí la columna va en fila y las marcas
+          tienen su raíl o su banda. */}
+      {!enFila && <MarcasEnLateral />}
+
       <Bloque titulo="Explorar por modalidad">
         <div className="grid grid-cols-2 gap-1.5">
           {CATEGORIAS.map((categoria) => (
@@ -104,11 +111,6 @@ export function BarraLateral({
           </div>
         </Bloque>
       )}
-
-      {/* Solo en columna. En la portada las marcas ya salen en los raíles
-          laterales o en su propia tira, y repetirlas aquí sería enseñar la misma
-          publicidad dos veces en la misma pantalla. */}
-      {!enFila && <MarcasEnLateral />}
     </aside>
   );
 }

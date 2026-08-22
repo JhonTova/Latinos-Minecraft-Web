@@ -219,6 +219,29 @@ export function BandaDePatrocinadores({ marcas }: { marcas: Patrocinador[] }) {
   );
 }
 
+/**
+ * Banda para las páginas que tienen columna lateral (`/servidores` y las de
+ * modalidad).
+ *
+ * Existe solo por debajo de `lg`: ahí la columna lateral deja de ir al lado y
+ * cae al fondo de la página, así que las marcas acabarían por detrás de la
+ * lista entera. Con esta banda arriba se ven igual que en escritorio, sin
+ * repetirse: a partir de `lg` se apaga y manda la columna.
+ */
+export async function BandaEnListado() {
+  const marcas = await patrocinadores().catch(() => []);
+
+  if (marcas.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mb-6 lg:hidden">
+      <BandaDePatrocinadores marcas={marcas} />
+    </div>
+  );
+}
+
 /** Banners que se enseñan en la columna lateral antes de pasar a la lista. */
 const BANNERS_EN_LATERAL = 2;
 

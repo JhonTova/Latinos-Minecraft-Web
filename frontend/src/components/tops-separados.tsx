@@ -14,7 +14,7 @@ import { useState } from "react";
  * los dos rankings completos aunque rastree con una pantalla estrecha. Cargar la
  * otra al pulsar habría sido más "eficiente" y peor en las tres cosas.
  *
- * Por defecto se enseña **«Premium y no premium»**. Es la lista donde cualquiera
+ * Por defecto se enseña **«Java Edition No Premium»**. Es la lista donde cualquiera
  * puede jugar: quien tiene cuenta original entra en los dos sitios, quien no la
  * tiene solo en estos. Abrir por la lista que excluye a la mitad del público
  * sería empezar por el sitio equivocado.
@@ -42,7 +42,7 @@ export function TopsSeparados({
           id="pestana-mixto"
           controla="lista-mixto"
         >
-          Premium y no premium
+          Java Edition No Premium
         </Pestana>
         <Pestana
           activo={activo === "premium"}
@@ -50,7 +50,7 @@ export function TopsSeparados({
           id="pestana-premium"
           controla="lista-premium"
         >
-          Solo premium
+          Java Edition Premium
         </Pestana>
       </div>
 

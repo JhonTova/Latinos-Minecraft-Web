@@ -6,6 +6,7 @@ import {
   SinServidores,
 } from "@/components/fila-servidor";
 import { BuscadorDeServidores } from "@/components/buscador";
+import { BandaEnListado } from "@/components/patrocinadores";
 import { ServidoresPatrocinados } from "@/components/servidores-patrocinados";
 import { catalogoDeModalidades, obtenerRanking } from "@/lib/api";
 import type { Metadata } from "next";
@@ -89,9 +90,13 @@ export default async function PaginaServidores(
                 de aire delante de los filtros. */}
             <div className="empty:hidden [&>*]:mb-6">
               <Suspense fallback={null}>
-                <ServidoresPatrocinados variante="listado" />
+                <ServidoresPatrocinados />
               </Suspense>
             </div>
+
+            <Suspense fallback={null}>
+              <BandaEnListado />
+            </Suspense>
 
             <Suspense fallback={<FiltrosCargando />}>
               <Filtros
@@ -180,16 +185,16 @@ async function Filtros({
             Todos
           </Filtro>
           <Filtro href={con({ cuentas: "premium" })} activo={cuentas === "premium"}>
-            Solo premium
+            Java Edition Premium
           </Filtro>
           <Filtro href={con({ cuentas: "todas" })} activo={cuentas === "todas"}>
-            Premium y no premium
+            Java Edition No Premium
           </Filtro>
           <Filtro
             href={con({ bedrock: bedrock ? null : "1" })}
             activo={bedrock}
           >
-            Móvil y consola
+            Bedrock Edition
           </Filtro>
         </div>
       </div>

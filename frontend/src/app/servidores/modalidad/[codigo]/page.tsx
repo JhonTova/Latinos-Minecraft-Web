@@ -1,6 +1,7 @@
 import { BarraLateral } from "@/components/barra-lateral";
 import { Cabecera, PieDePagina } from "@/components/cabecera";
 import { FilaServidor, FilasCargando } from "@/components/fila-servidor";
+import { BandaEnListado } from "@/components/patrocinadores";
 import { catalogoDeModalidades, obtenerRankingDe } from "@/lib/api";
 import { categoriaDe } from "@/lib/categorias";
 import type { Metadata } from "next";
@@ -110,6 +111,10 @@ export default async function PaginaDeModalidad(
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_290px] lg:items-start">
           <div className="min-w-0">
+            <Suspense fallback={null}>
+              <BandaEnListado />
+            </Suspense>
+
             <Suspense fallback={<OtrasCargando />}>
               <Otras activa={encontrada.codigo} />
             </Suspense>

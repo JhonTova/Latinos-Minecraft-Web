@@ -200,7 +200,7 @@ export function EditorDeFicha({
           <span className="font-medium">Se puede jugar desde móvil o consola</span>
           <span className="mt-0.5 block text-muted text-pretty">
             Márcalo si tienes Geyser o similar y los jugadores de Bedrock pueden
-            entrar. Aparecerás en el filtro «Móvil y consola», que es de los más
+            entrar. Aparecerás en el filtro «Bedrock Edition», que es de los más
             usados. No lo marques si no funciona: el jugador lo descubre al
             intentar entrar y se va.
           </span>

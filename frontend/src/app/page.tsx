@@ -77,7 +77,7 @@ export default async function Page() {
 
         <main className="w-full min-w-0 space-y-10">
           <Suspense fallback={null}>
-            <ServidoresPatrocinados variante="portada" />
+            <ServidoresPatrocinados />
           </Suspense>
 
           <FranjaDeCifras cifras={cifras} />
@@ -137,7 +137,7 @@ async function Ranking() {
       <TopsSeparados
         premium={
           <ListaDelTop
-            titulo="Solo cuentas premium"
+            titulo="Java Edition Premium"
             explicacion="Hace falta una cuenta original de Minecraft para entrar."
             servidores={premium}
             vacio="Todavía no hay servidores en esta lista."
@@ -145,7 +145,7 @@ async function Ranking() {
         }
         mixto={
           <ListaDelTop
-            titulo="Cuentas premium y no premium"
+            titulo="Java Edition No Premium"
             explicacion="Se puede entrar con cuenta original o sin ella."
             servidores={mixto}
             vacio="Todavía no hay servidores en esta lista."

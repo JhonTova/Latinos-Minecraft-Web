@@ -11,11 +11,17 @@
  * pantalla.
  */
 
-/** Texto largo, el que se usa en la ficha y como título accesible. */
+/**
+ * Texto largo, el que se usa en la ficha y como título accesible.
+ *
+ * La etiqueta corta dice la edición («Java Edition Premium») porque es como lo
+ * nombra el jugador; el texto largo dice qué significa, que es lo que de verdad
+ * necesita quien no conoce la jerga.
+ */
 export function textoDeCuenta(aceptaNoPremium: boolean): string {
   return aceptaNoPremium
-    ? "Servidor para cuentas premium y no premium"
-    : "Servidor solo para cuentas premium";
+    ? "Se puede entrar con cuenta original o sin ella"
+    : "Hace falta una cuenta original de Minecraft para entrar";
 }
 
 export function EtiquetaDeCuenta({
@@ -29,7 +35,9 @@ export function EtiquetaDeCuenta({
 
   // Corto en las listas, completo en la ficha. En una tarjeta de ranking la
   // frase entera partiría la línea y empujaría todo lo demás.
-  const etiqueta = aceptaNoPremium ? "Premium y no premium" : "Solo premium";
+  const etiqueta = aceptaNoPremium
+    ? "Java Edition No Premium"
+    : "Java Edition Premium";
 
   return (
     <span
@@ -62,8 +70,8 @@ export function EtiquetaBedrock({
       }`}
     >
       <span aria-hidden>▣</span>
-      Móvil y consola
-      <span className="sr-only">. Se puede jugar desde móvil o consola (Bedrock)</span>
+      Bedrock Edition
+      <span className="sr-only">. Se puede jugar desde móvil o consola</span>
     </span>
   );
 }

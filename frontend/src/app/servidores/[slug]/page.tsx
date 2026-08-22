@@ -252,12 +252,12 @@ export default async function PaginaServidor(
                     se viera mal. En su lugar, lo que aquí falta: si se puede
                     jugar desde el móvil. */}
                 <Dato
-                  etiqueta="Desde el móvil"
+                  etiqueta="Bedrock Edition"
                   valor={servidor.soportaBedrock ? "Sí" : "No"}
                   nota={
                     servidor.soportaBedrock
-                      ? "También consola (Bedrock)"
-                      : "Solo Minecraft Java"
+                      ? "Se entra desde móvil o consola"
+                      : "Solo Java Edition"
                   }
                 />
               </div>
