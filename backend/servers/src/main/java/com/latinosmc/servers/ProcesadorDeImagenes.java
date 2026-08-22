@@ -30,6 +30,14 @@ public class ProcesadorDeImagenes {
     public static final int BANNER_ANCHO_MAX = 1200;
     public static final int BANNER_ALTO_MAX = 300;
 
+    /**
+     * Banner vertical de patrocinador. El doble del rascacielos clasico (160x600)
+     * para que se vea nitido en pantallas de densidad alta sin pesar de mas.
+     */
+    public static final int BANNER_VERTICAL_ANCHO_MAX = 320;
+
+    public static final int BANNER_VERTICAL_ALTO_MAX = 1200;
+
     public static final long MAX_ICONO_BYTES = 2L * 1024 * 1024;
     public static final long MAX_BANNER_BYTES = 4L * 1024 * 1024;
 
@@ -127,6 +135,39 @@ public class ProcesadorDeImagenes {
         BufferedImage ajustada = ajustarADentroDe(imagen, BANNER_ANCHO_MAX, BANNER_ALTO_MAX);
         return new Resultado(
                 codificarPng(ajustada), "image/png", ajustada.getWidth(), ajustada.getHeight());
+    }
+
+    /**
+     * Banner vertical de un patrocinador de marca.
+     *
+     * <p>Va en los laterales de la portada. La proporcion de referencia es la del
+     * rascacielos clasico —160x600—, y por eso el tope es alto y estrecho: una
+     * imagen apaisada metida ahi se queda en una franja de nada.
+     *
+     * <p>Se ajusta DENTRO del tope en vez de recortar al centro. Un banner
+     * publicitario recortado pierde justo lo que la marca pago por enseñar, y
+     * quien lo subio no entiende por que le falta media pieza.
+     *
+     * <p>El GIF animado se conserva tal cual, como en {@link #procesarBanner}: la
+     * publicidad de un hosting suele venir animada, y reprocesarla con la
+     * biblioteca estandar la dejaria congelada en el primer fotograma.
+     */
+    public Resultado procesarBannerVertical(byte[] original) {
+        if (esGif(original)) {
+            exigirTamano(
+                    original,
+                    MAX_GIF_BYTES,
+                    "Un banner animado no puede pasar de 1 MB. Uno más pesado hace que la portada "
+                            + "tarde en cargar y los visitantes se van antes de verla.");
+            decodificar(original);
+            return new Resultado(original, "image/gif", null, null);
+        }
+
+        exigirTamano(original, MAX_BANNER_BYTES, "El banner no puede pasar de 4 MB.");
+
+        BufferedImage imagen = decodificar(original);
+        BufferedImage ajustada = ajustarADentroDe(imagen, BANNER_VERTICAL_ANCHO_MAX, BANNER_VERTICAL_ALTO_MAX);
+        return new Resultado(codificarPng(ajustada), "image/png", ajustada.getWidth(), ajustada.getHeight());
     }
 
     /**

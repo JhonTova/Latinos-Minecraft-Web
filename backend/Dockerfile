@@ -45,7 +45,16 @@ WORKDIR /app
 
 # Usuario sin privilegios. Si alguien consigue ejecutar codigo dentro del
 # contenedor, no lo hace como root.
-RUN addgroup -S latinosmc && adduser -S latinosmc -G latinosmc
+#
+# El UID va FIJO a proposito. Sin -u, Alpine elige el primer hueco libre, que
+# puede cambiar entre reconstrucciones de la imagen: la carpeta data/archivos
+# del host se queda con el dueño antiguo y las subidas empiezan a fallar con
+# "no se puede escribir" sin que nada mas haya cambiado. Con un UID fijo, el
+# chown del host se hace una vez y vale para siempre.
+#
+# ⚠️ Este numero aparece tambien en scripts/actualizar.sh. Si cambia aqui,
+# cambia alli.
+RUN addgroup -S -g 10001 latinosmc && adduser -S -u 10001 -G latinosmc latinosmc
 
 COPY --from=build /origen/app/target/app-*.jar app.jar
 RUN chown -R latinosmc:latinosmc /app

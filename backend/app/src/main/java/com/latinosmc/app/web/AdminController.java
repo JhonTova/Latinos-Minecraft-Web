@@ -366,6 +366,50 @@ public class AdminController {
                 .orElseThrow();
     }
 
+    /**
+     * Sube el banner vertical de un patrocinador.
+     *
+     * <p>Aparte del alta porque hace falta el identificador para nombrar el
+     * archivo, y ese no existe hasta que la ficha esta creada.
+     *
+     * <p>Se reprocesa como cualquier otra imagen subida (ADR-0017). Que la envie
+     * un administrador no la hace de fiar: el archivo lo suele mandar la marca
+     * por correo, asi que su origen es exactamente el mismo que el de una subida
+     * de un desconocido.
+     */
+    @PostMapping("/patrocinadores/{id}/banner")
+    public Map<String, String> subirBannerDePatrocinador(
+            @UsuarioActual IdentityRepository.Usuario usuario,
+            @PathVariable java.util.UUID id,
+            @org.springframework.web.bind.annotation.RequestParam("archivo")
+                    org.springframework.web.multipart.MultipartFile archivo) {
+
+        exigirAdministrador(usuario);
+
+        var procesada = imagenes.procesarBannerVertical(leerArchivo(archivo));
+
+        // La marca de tiempo evita que el banner nuevo quede escondido tras la
+        // cache del anterior en el navegador de quien ya visito la portada.
+        String extension = "image/gif".equals(procesada.contentType()) ? ".gif" : ".png";
+        String clave = "patrocinadores/" + id + "-" + System.currentTimeMillis() + extension;
+
+        almacen.guardar(clave, procesada.contenido(), procesada.contentType());
+
+        if (!patrocinadores.guardarBanner(id, clave)) {
+            throw new DomainException.NotFound("sponsor.not_found", "Ese patrocinador no existe.");
+        }
+
+        administradores.registrar(
+                Ids.newId(),
+                usuario.id(),
+                "brand_sponsor.banner",
+                "brand_sponsor",
+                id.toString(),
+                Map.of("clave", clave));
+
+        return Map.of("url", almacen.urlPublica(clave));
+    }
+
     @PostMapping("/patrocinadores/{id}/aprobar")
     public Map<String, Boolean> aprobarPatrocinador(
             @UsuarioActual IdentityRepository.Usuario usuario, @PathVariable java.util.UUID id) {

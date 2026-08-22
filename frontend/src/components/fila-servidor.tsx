@@ -123,9 +123,15 @@ export function FilaServidor({
         {/* --- Banner ---------------------------------------------------- */}
         {/* El banner necesita 320 px suyos. Solo aparece cuando la fila tiene
             sitio de verdad: en la columna estrecha del top doble se esconde y
-            el nombre se queda con el espacio, que es lo que importa ahí. */}
+            el nombre se queda con el espacio, que es lo que importa ahí.
+
+            El umbral es @4xl (896 px) y no @3xl (768). Con 768 la fila entraba
+            justo pero, descontados el banner, las cifras y el botón, al nombre y
+            la descripción les quedaban unos 120 px: el texto se partía letra a
+            letra y parecía que el banner estuviera encima. Cabía por aritmética
+            y no se leía, que es la única medida que cuenta. */}
         {servidor.bannerUrl && (
-          <div className="hidden shrink-0 overflow-hidden rounded-md ring-1 ring-border @3xl:block">
+          <div className="hidden shrink-0 overflow-hidden rounded-md ring-1 ring-border @4xl:block">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={servidor.bannerUrl}

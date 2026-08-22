@@ -271,6 +271,8 @@ export interface Patrocinador {
   nombre: string;
   urlDestino: string;
   logoUrl: string | null;
+  /** Banner vertical de los laterales. null: se pinta el logotipo y el nombre. */
+  bannerUrl: string | null;
 }
 
 /**
@@ -331,7 +333,7 @@ export async function ajustesDelSitio(): Promise<AjustesDelSitio> {
 const SITIO_POR_DEFECTO: AjustesDelSitio = {
   titulo: "Servidores de Minecraft en español — Ranking de servidores latinos",
   descripcion:
-    "Los mejores servidores de Minecraft en español y latinos. Ranking honesto con votos verificados.",
+    "Los mejores servidores de Minecraft en español y latinos. Ranking por votos verificados.",
   nombre: "LatinosMC",
   ogImageUrl: null,
   logoUrl: null,

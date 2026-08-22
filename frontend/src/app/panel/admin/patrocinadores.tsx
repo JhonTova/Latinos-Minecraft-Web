@@ -3,7 +3,7 @@
 import { Aviso, Boton, Campo } from "@/components/ui";
 import { refrescarPatrocinadores } from "@/lib/acciones";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import type { PatrocinadorAdmin } from "@/lib/sesion";
 
@@ -61,7 +61,7 @@ export function GestionDePatrocinadores({
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
           {patrocinadores.map((p) => (
-            <li key={p.id} className="flex items-center gap-3 px-4 py-3">
+            <li key={p.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{p.nombre}</p>
                 <p className="truncate text-xs text-subtle">{p.urlDestino}</p>
@@ -73,7 +73,11 @@ export function GestionDePatrocinadores({
               <Estado patrocinador={p} ahora={ahora} />
 
               {!p.canceladoEn && (
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 items-center gap-2">
+                  <SubirBanner
+                    patrocinadorId={p.id}
+                    tieneBanner={p.claveBanner != null}
+                  />
                   {!p.aprobadoEn && (
                     <button
                       onClick={() => accion(p.id, "aprobar")}
@@ -97,6 +101,99 @@ export function GestionDePatrocinadores({
         </ul>
       )}
     </div>
+  );
+}
+
+/**
+ * Banner vertical del patrocinador, el que se pinta en los laterales de la
+ * portada.
+ *
+ * Va aparte del alta a propósito: la marca suele mandar el archivo días después
+ * de cerrar el trato, y bloquear el alta hasta tenerlo dejaría el patrocinio sin
+ * registrar mientras tanto. Sin banner el patrocinador se publica igual, con su
+ * logotipo y su nombre.
+ */
+function SubirBanner({
+  patrocinadorId,
+  tieneBanner,
+}: {
+  patrocinadorId: string;
+  tieneBanner: boolean;
+}) {
+  const router = useRouter();
+  const entrada = useRef<HTMLInputElement>(null);
+  const [subiendo, setSubiendo] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [puesto, setPuesto] = useState(tieneBanner);
+
+  async function subir(archivo: File) {
+    setError(null);
+    setSubiendo(true);
+
+    const datos = new FormData();
+    datos.append("archivo", archivo);
+
+    try {
+      const respuesta = await fetch(
+        `/api/backend/admin/patrocinadores/${patrocinadorId}/banner`,
+        { method: "POST", body: datos },
+      );
+
+      // 413 lo devuelve el proxy de delante, no la aplicación, así que no trae
+      // explicación en JSON.
+      if (respuesta.status === 413) {
+        throw new Error("La imagen pesa demasiado. Prueba con una más ligera.");
+      }
+      if (!respuesta.ok) {
+        const detalle = await respuesta.json().catch(() => null);
+        throw new Error(detalle?.detail ?? "No se pudo subir el banner.");
+      }
+
+      setPuesto(true);
+      await refrescarPatrocinadores();
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo subir el banner.");
+    } finally {
+      setSubiendo(false);
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => entrada.current?.click()}
+        disabled={subiendo}
+        title="Banner vertical para los laterales de la portada (160×600)"
+        className={`rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-60 ${
+          puesto
+            ? "border-primary/40 bg-primary-subtle text-primary"
+            : "border-border hover:bg-surface-sunken"
+        }`}
+      >
+        {subiendo ? "Subiendo…" : puesto ? "Banner ✓" : "Banner"}
+      </button>
+
+      <input
+        ref={entrada}
+        type="file"
+        // Ni se ofrece SVG: el servidor lo rechaza igual (ADR-0017).
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        className="hidden"
+        onChange={(e) => {
+          const archivo = e.target.files?.[0];
+          if (archivo) subir(archivo);
+          e.target.value = "";
+        }}
+      />
+
+      {error && (
+        <span className="w-full text-xs text-danger" role="alert">
+          {error}
+        </span>
+      )}
+    </>
   );
 }
 
@@ -216,7 +313,8 @@ function Alta({ onCreado }: { onCreado: () => void }) {
 
       <p className="text-xs text-subtle text-pretty">
         Se crea oculto. Aparecerá en la web cuando lo apruebes, en un segundo
-        paso deliberado.
+        paso deliberado. El banner vertical (160×600) se sube después, desde el
+        botón «Banner» de su fila.
       </p>
     </div>
   );

@@ -27,7 +27,7 @@ public class SiteSettingsRepository {
      */
     private static final AjustesDelSitio EMERGENCIA = new AjustesDelSitio(
             "Servidores de Minecraft en español — Ranking de servidores latinos",
-            "Los mejores servidores de Minecraft en español y latinos. Ranking honesto con votos verificados.",
+            "Los mejores servidores de Minecraft en español y latinos. Ranking por votos verificados.",
             null,
             "LatinosMC",
             null,

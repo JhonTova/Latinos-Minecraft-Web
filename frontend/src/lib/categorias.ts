@@ -37,7 +37,7 @@ export const CATEGORIAS: Record<string, Categoria> = {
   SKYBLOCK: {
     titulo: "Servidores de Minecraft SkyBlock en español",
     descripcion:
-      "Servidores skyblock de Minecraft en español y latinos. Ranking honesto por votos verificados, con IP, versión y jugadores conectados.",
+      "Servidores skyblock de Minecraft en español y latinos. Ranking por votos verificados, con IP, versión y jugadores conectados.",
     h1: "Servidores de SkyBlock",
     intro: [
       "Empiezas en una isla flotante con un árbol, un cofre y nada más. Todo lo que llegue a existir lo tienes que fabricar tú a partir de eso. Es el modo que más engancha a quien le gusta optimizar: cada bloque cuenta y cada error se paga.",

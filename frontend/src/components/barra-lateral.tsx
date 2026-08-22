@@ -22,9 +22,33 @@ const CATEGORIAS = [
   { codigo: "ANARCHY", nombre: "Anarquía", emoji: "💀" },
 ];
 
-export function BarraLateral() {
+/**
+ * Bloques secundarios: navegar por modalidad y cómo se vota.
+ *
+ * @param disposicion `columna` en las páginas que la usan como barra lateral de
+ *   verdad; `fila` en la portada, donde ocupa el ancho completo y dos bloques
+ *   apilados dejarían una tira de aire vacío a la derecha.
+ * @param llamadaParaDuenos la invitación a registrar un servidor. Se apaga en la
+ *   portada porque allí ya está la franja grande del final, y la misma oferta
+ *   dos veces en la misma pantalla resta fuerza a las dos.
+ */
+export function BarraLateral({
+  disposicion = "columna",
+  llamadaParaDuenos = true,
+}: {
+  disposicion?: "columna" | "fila";
+  llamadaParaDuenos?: boolean;
+}) {
+  const enFila = disposicion === "fila";
+
   return (
-    <aside className="space-y-5">
+    <aside
+      className={
+        enFila
+          ? "grid gap-4 md:grid-cols-2"
+          : "space-y-5"
+      }
+    >
       <Bloque titulo="Explorar por modalidad">
         <div className="grid grid-cols-2 gap-1.5">
           {CATEGORIAS.map((categoria) => (
@@ -37,27 +61,6 @@ export function BarraLateral() {
               <span className="truncate">{categoria.nombre}</span>
             </Link>
           ))}
-        </div>
-      </Bloque>
-
-      <Bloque titulo="¿Tienes un servidor?">
-        <p className="text-sm text-muted text-pretty">
-          Añádelo gratis. Instala el plugin y tus jugadores podrán votar y
-          llevarse recompensas dentro del juego.
-        </p>
-        <div className="mt-3 flex flex-col gap-2">
-          <Link
-            href="/registro"
-            className="boton-vivo rounded-md bg-primary px-3 py-2 text-center text-sm font-medium text-on-accent shadow-sm hover:bg-primary-hover"
-          >
-            Añadir mi servidor
-          </Link>
-          <Link
-            href="/plugin"
-            className="boton-vivo rounded-md border border-border bg-surface px-3 py-2 text-center text-sm font-medium hover:bg-surface-sunken"
-          >
-            Ver cómo funciona
-          </Link>
         </div>
       </Bloque>
 
@@ -79,7 +82,33 @@ export function BarraLateral() {
         </p>
       </Bloque>
 
-      <MarcasEnLateral />
+      {llamadaParaDuenos && (
+        <Bloque titulo="¿Tienes un servidor?">
+          <p className="text-sm text-muted text-pretty">
+            Añádelo gratis. Instala el plugin y tus jugadores podrán votar y
+            llevarse recompensas dentro del juego.
+          </p>
+          <div className="mt-3 flex flex-col gap-2">
+            <Link
+              href="/registro"
+              className="boton-vivo rounded-md bg-primary px-3 py-2 text-center text-sm font-medium text-on-accent shadow-sm hover:bg-primary-hover"
+            >
+              Añadir mi servidor
+            </Link>
+            <Link
+              href="/plugin"
+              className="boton-vivo rounded-md border border-border bg-surface px-3 py-2 text-center text-sm font-medium hover:bg-surface-sunken"
+            >
+              Ver cómo funciona
+            </Link>
+          </div>
+        </Bloque>
+      )}
+
+      {/* Solo en columna. En la portada las marcas ya salen en los raíles
+          laterales o en su propia tira, y repetirlas aquí sería enseñar la misma
+          publicidad dos veces en la misma pantalla. */}
+      {!enFila && <MarcasEnLateral />}
     </aside>
   );
 }

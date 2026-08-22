@@ -47,7 +47,8 @@ public class PatrocinadoresController {
                         p.id(),
                         p.nombre(),
                         p.urlDestino(),
-                        p.claveLogo() == null ? null : almacen.urlPublica(p.claveLogo())))
+                        p.claveLogo() == null ? null : almacen.urlPublica(p.claveLogo()),
+                        p.claveBanner() == null ? null : almacen.urlPublica(p.claveBanner())))
                 .toList();
 
         return ResponseEntity.ok()
@@ -58,6 +59,9 @@ public class PatrocinadoresController {
     /**
      * Sin fechas ni estado: al visitante no le importan y publicarlas diria a
      * quien mire la API cuando caduca cada contrato.
+     *
+     * @param bannerUrl banner vertical de los laterales. null cuando la marca no
+     *     lo ha subido: la portada pinta entonces su logotipo y su nombre.
      */
-    public record Patrocinador(UUID id, String nombre, String urlDestino, String logoUrl) {}
+    public record Patrocinador(UUID id, String nombre, String urlDestino, String logoUrl, String bannerUrl) {}
 }

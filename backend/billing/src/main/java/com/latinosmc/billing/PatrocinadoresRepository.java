@@ -38,7 +38,7 @@ public class PatrocinadoresRepository {
     public List<Patrocinador> vigentes(Instant ahora) {
         return jdbc.sql(
                         """
-                        SELECT id, name, target_url, logo_key, starts_at, ends_at,
+                        SELECT id, name, target_url, logo_key, banner_key, starts_at, ends_at,
                                display_order, approved_at, cancelled_at
                           FROM brand_sponsors
                          WHERE cancelled_at IS NULL
@@ -56,7 +56,7 @@ public class PatrocinadoresRepository {
     public List<Patrocinador> todos() {
         return jdbc.sql(
                         """
-                        SELECT id, name, target_url, logo_key, starts_at, ends_at,
+                        SELECT id, name, target_url, logo_key, banner_key, starts_at, ends_at,
                                display_order, approved_at, cancelled_at
                           FROM brand_sponsors
                          ORDER BY cancelled_at NULLS FIRST, display_order, created_at DESC
@@ -123,6 +123,7 @@ public class PatrocinadoresRepository {
                 rs.getString("name"),
                 rs.getString("target_url"),
                 rs.getString("logo_key"),
+                rs.getString("banner_key"),
                 rs.getTimestamp("starts_at").toInstant(),
                 rs.getTimestamp("ends_at").toInstant(),
                 rs.getInt("display_order"),
@@ -131,8 +132,24 @@ public class PatrocinadoresRepository {
     }
 
     /**
+     * Cambia el banner vertical, o lo quita si {@code claveBanner} es null.
+     *
+     * <p>Aparte del alta porque el banner se sube DESPUES de crear la ficha: hace
+     * falta un identificador al que asociar el archivo antes de tenerlo.
+     */
+    public boolean guardarBanner(UUID id, String claveBanner) {
+        return jdbc.sql("UPDATE brand_sponsors SET banner_key = :banner WHERE id = :id")
+                        .param("id", id)
+                        .param("banner", claveBanner)
+                        .update()
+                > 0;
+    }
+
+    /**
      * @param claveLogo clave en el almacen, no una URL. La URL publica la compone
      *     quien pinta, porque cambia segun donde este el almacen.
+     * @param claveBanner banner vertical de los laterales de la portada. null
+     *     cuando no lo ha subido: entonces se pinta el logotipo y el nombre.
      * @param aprobadoEn null mientras no se haya aprobado; sin esto no se publica
      */
     public record Patrocinador(
@@ -140,6 +157,7 @@ public class PatrocinadoresRepository {
             String nombre,
             String urlDestino,
             String claveLogo,
+            String claveBanner,
             Instant desde,
             Instant hasta,
             int orden,

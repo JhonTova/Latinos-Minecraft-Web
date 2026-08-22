@@ -58,7 +58,13 @@ export default async function PaginaComprarDestacado(
         <Comprar
           slots={slots}
           servidores={servidores}
-          slotInicial={Number.isInteger(slotPedido) && slotPedido >= 1 && slotPedido <= 5 ? slotPedido : null}
+          slotInicial={
+            // El tope tiene que seguir al CHECK de featured_slots (V24). Es solo
+            // qué espacio viene preseleccionado: la compra la valida el backend.
+            Number.isInteger(slotPedido) && slotPedido >= 1 && slotPedido <= 6
+              ? slotPedido
+              : null
+          }
         />
       </Tarjeta>
 

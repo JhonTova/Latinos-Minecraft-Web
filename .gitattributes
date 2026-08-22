@@ -1,0 +1,5 @@
+# Los scripts se editan en Windows y se ejecutan en Linux. Con finales de linea
+# CRLF, el shebang pasa a ser "#!/usr/bin/env bash\r" y el VPS responde
+# "bad interpreter: No such file or directory". Se fuerza LF siempre.
+*.sh text eol=lf
+Dockerfile text eol=lf

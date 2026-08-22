@@ -29,6 +29,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/destacados")
 public class DestacadosController {
 
+    /**
+     * Cuantos espacios tiene la portada.
+     *
+     * <p>Tiene que coincidir con el CHECK de {@code featured_slots} (V24). Si
+     * aqui se sube sin subirlo alli, el espacio nuevo sale en la portada como
+     * hueco libre y la compra revienta al llegar a la base de datos.
+     */
+    static final int ESPACIOS = 6;
+
     private final BillingRepository facturacion;
     private final FileStorage almacen;
 
@@ -44,11 +53,15 @@ public class DestacadosController {
     }
 
     /**
-     * Los cinco espacios, ocupados o no.
+     * Los seis espacios, ocupados o no.
      *
-     * <p>Se devuelven siempre los cinco —con {@code servidor} a null los libres—
+     * <p>Se devuelven siempre los seis —con {@code servidor} a null los libres—
      * para que la portada no cambie de forma segun quien haya comprado. Un bloque
-     * que salta de tres a cinco huecos mueve todo lo de abajo y se nota.
+     * que salta de tres a seis huecos mueve todo lo de abajo y se nota.
+     *
+     * <p>Seis y no cinco porque se pintan de dos en dos: cinco dejan la ultima
+     * fila coja y el hueco suelto se lee como un fallo de maquetacion en vez de
+     * como el espacio libre que es.
      *
      * <p>Cache de 60 segundos: una compra tarda como mucho un minuto en verse, y a
      * cambio la consulta mas visitada del sitio no toca la base de datos en cada
@@ -58,7 +71,7 @@ public class DestacadosController {
     public ResponseEntity<List<SlotEnPortada>> destacados() {
         var ocupados = facturacion.destacadosVigentes(Instant.now());
 
-        List<SlotEnPortada> slots = java.util.stream.IntStream.rangeClosed(1, 5)
+        List<SlotEnPortada> slots = java.util.stream.IntStream.rangeClosed(1, ESPACIOS)
                 .mapToObj(posicion -> ocupados.stream()
                         .filter(o -> o.posicion() == posicion)
                         .findFirst()

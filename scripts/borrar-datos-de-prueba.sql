@@ -71,7 +71,7 @@ TRUNCATE
 COMMIT;
 
 \echo ''
-\echo 'Listo. Los cinco espacios quedan libres y no hay ningun pedido.'
+\echo 'Listo. Los seis espacios quedan libres y no hay ningun pedido.'
 \echo 'Se conservan usuarios, organizaciones, servidores, precios y administradores.'
 \echo ''
 

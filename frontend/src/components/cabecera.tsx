@@ -217,91 +217,180 @@ function iniciales(nombre: string): string {
   ).toUpperCase();
 }
 
+/**
+ * Pie de página.
+ *
+ * Tres decisiones que lo separan del típico muro de enlaces:
+ *
+ * 1. **La marca ocupa una columna ancha con su propia voz**, no un logotipo
+ *    suelto sobre cuatro listas iguales. El pie es lo último que se lee: si
+ *    todas las columnas pesan lo mismo, no queda nada en la cabeza.
+ * 2. **Lleva las cifras vivas.** Un pie con un número que cambia dice que el
+ *    sitio está vivo; uno con solo enlaces y un año, que lleva ahí desde 2019.
+ * 3. **Las columnas están agrupadas por a quién sirven** —quien juega, quien
+ *    tiene servidor— y no por dónde vive cada página. La estructura interna del
+ *    sitio no le interesa a nadie que esté leyendo el pie.
+ */
 export async function PieDePagina() {
-  const sitio = await ajustesDelSitio();
+  const [sitio, cifras] = await Promise.all([ajustesDelSitio(), estadisticas()]);
   const año = new Date().getFullYear();
+  const formato = new Intl.NumberFormat("es-ES");
 
   return (
-    <footer className="mt-auto border-t border-border bg-surface-sunken">
-      <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="lg:col-span-2">
-            <div className="flex items-center gap-2.5 font-semibold">
+    <footer className="relative mt-auto overflow-hidden border-t border-border bg-surface-sunken">
+      {/* Filete de marca sobre el borde. Es lo que hace que el pie se lea como
+          el cierre de la página y no como una zona que empieza sin más. */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, var(--primary) 25%, var(--oro-400) 60%, transparent)",
+        }}
+      />
+
+      <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr]">
+          <div className="min-w-0">
+            <Link
+              href="/"
+              className="group inline-flex items-center gap-2.5"
+            >
               <Logotipo url={sitio.logoUrl} nombre={sitio.nombre} />
-              {sitio.nombre}
-            </div>
-            <p className="mt-3 max-w-sm text-sm text-muted text-pretty">
+              <span className="display text-lg font-semibold">
+                {sitio.nombre}
+              </span>
+            </Link>
+
+            <p className="mt-4 max-w-sm text-sm text-muted text-pretty">
               El directorio de servidores de Minecraft en español. Encuentra
               dónde jugar, vota por tu favorito y llévate recompensas dentro del
               juego.
             </p>
+
+            {cifras && cifras.servidores > 0 && (
+              <div className="mt-5 flex flex-wrap gap-2">
+                <DatoDelPie
+                  valor={formato.format(cifras.servidores)}
+                  etiqueta="servidores"
+                />
+                <DatoDelPie
+                  valor={formato.format(cifras.jugadores)}
+                  etiqueta="jugando ahora"
+                  viva
+                />
+                <DatoDelPie
+                  valor={formato.format(cifras.votos24h)}
+                  etiqueta="votos hoy"
+                />
+              </div>
+            )}
           </div>
 
-          <div>
-            <h2 className="mb-3 text-sm font-semibold">Jugadores</h2>
-            <ul className="space-y-2 text-sm text-muted">
-              <li>
-                <Link href="/servidores" className="enlace-vivo">
-                  Todos los servidores
-                </Link>
-              </li>
-              <li>
-                <Link href="/votar" className="enlace-vivo">
-                  Votar con mi código
-                </Link>
-              </li>
-              <li>
-                <Link href="/" className="enlace-vivo">
-                  Destacados
-                </Link>
-              </li>
-            </ul>
-          </div>
+          <ColumnaDelPie titulo="Para jugar">
+            <EnlaceDelPie href="/servidores">Todos los servidores</EnlaceDelPie>
+            <EnlaceDelPie href="/votar">Votar con mi código</EnlaceDelPie>
+            <EnlaceDelPie href="/servidores?modalidad=SURVIVAL">
+              Survival
+            </EnlaceDelPie>
+            <EnlaceDelPie href="/servidores?modalidad=SKYBLOCK">
+              SkyBlock
+            </EnlaceDelPie>
+          </ColumnaDelPie>
 
-          <div>
-            <h2 className="mb-3 text-sm font-semibold">Dueños de servidor</h2>
-            <ul className="space-y-2 text-sm text-muted">
+          <ColumnaDelPie titulo="Para tu servidor">
+            <EnlaceDelPie href="/registro">Añadir mi servidor</EnlaceDelPie>
+            <EnlaceDelPie href="/plugin">Cómo funciona el plugin</EnlaceDelPie>
+            <EnlaceDelPie href="/panel">Mi panel</EnlaceDelPie>
+            {/* Al panel y no a una página pública de venta: destacar es algo que
+                se hace sobre un servidor propio ya registrado, así que la puerta
+                de entrada es la sesión. */}
+            <EnlaceDelPie href="/panel/destacar">
+              Destacar mi servidor
+            </EnlaceDelPie>
+            {sitio.urlPlugin && (
               <li>
-                <Link href="/registro" className="enlace-vivo">
-                  Añadir mi servidor
-                </Link>
+                <a
+                  href={sitio.urlPlugin}
+                  target="_blank"
+                  rel="noopener"
+                  className="enlace-vivo text-muted transition-colors hover:text-text"
+                >
+                  Descargar el plugin
+                </a>
               </li>
-              <li>
-                <Link href="/panel" className="enlace-vivo">
-                  Mi panel
-                </Link>
-              </li>
-              {/* Al panel y no a una página pública de venta: destacar es algo
-                  que se hace sobre un servidor propio ya registrado, así que la
-                  puerta de entrada es la sesión. */}
-              <li>
-                <Link href="/panel/destacar" className="enlace-vivo">
-                  Destacar mi servidor
-                </Link>
-              </li>
-              {sitio.urlPlugin && (
-                <li>
-                  <a
-                    href={sitio.urlPlugin}
-                    target="_blank"
-                    rel="noopener"
-                    className="enlace-vivo"
-                  >
-                    Descargar el plugin
-                  </a>
-                </li>
-              )}
-            </ul>
-          </div>
+            )}
+          </ColumnaDelPie>
         </div>
 
-        <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6 text-xs text-subtle">
+        <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-6 text-xs text-subtle">
           <span>
             © {año} {sitio.nombre}
           </span>
-          <span>No estamos afiliados a Mojang ni a Microsoft.</span>
+          <span className="hidden sm:inline" aria-hidden>
+            ·
+          </span>
+          <span>Jugadores y estado medidos por nosotros con ping directo.</span>
+          <span className="ml-auto">
+            No estamos afiliados a Mojang ni a Microsoft.
+          </span>
         </div>
       </div>
     </footer>
+  );
+}
+
+function ColumnaDelPie({
+  titulo,
+  children,
+}: {
+  titulo: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <h2 className="nav-display mb-4 text-[10px] text-subtle">{titulo}</h2>
+      <ul className="space-y-2.5 text-sm">{children}</ul>
+    </div>
+  );
+}
+
+function EnlaceDelPie({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <li>
+      <Link
+        href={href}
+        className="enlace-vivo text-muted transition-colors hover:text-text"
+      >
+        {children}
+      </Link>
+    </li>
+  );
+}
+
+/** Cifra del pie. El punto que late solo va en la que cambia sola. */
+function DatoDelPie({
+  valor,
+  etiqueta,
+  viva,
+}: {
+  valor: string;
+  etiqueta: string;
+  viva?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs">
+      {viva && (
+        <span className="late size-1.5 rounded-full bg-success" aria-hidden />
+      )}
+      <span className="cifras font-semibold">{valor}</span>
+      <span className="text-muted">{etiqueta}</span>
+    </div>
   );
 }

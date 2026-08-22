@@ -215,6 +215,8 @@ export interface PatrocinadorAdmin {
   nombre: string;
   urlDestino: string;
   claveLogo: string | null;
+  /** Banner vertical de los laterales de la portada. */
+  claveBanner: string | null;
   desde: string;
   hasta: string;
   orden: number;

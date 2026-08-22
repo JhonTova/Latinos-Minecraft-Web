@@ -48,8 +48,10 @@ const RUTAS_PERMITIDAS: RegExp[] = [
   // solo decide qué se puede alcanzar, nunca quién.
   /^admin\/(soy|slots|pedidos|ingresos|administradores|patrocinadores|voto|sitio)$/,
   /^admin\/sitio\/(imagen|logo)$/,
-  /^admin\/slots\/[1-5]$/,
-  /^admin\/patrocinadores\/[0-9a-f-]{36}\/(aprobar|retirar)$/i,
+  // Seis espacios desde V24. El rango va escrito y no como `\d+` a propósito:
+  // así una ruta inventada no llega siquiera al backend.
+  /^admin\/slots\/[1-6]$/,
+  /^admin\/patrocinadores\/[0-9a-f-]{36}\/(aprobar|retirar|banner)$/i,
   // Retirada de imágenes automáticas. Es la mitad que hace aceptable adoptar
   // contenido de terceros al instante (ADR-0027): sin una forma de quitarlo, la
   // política elegida no existe.

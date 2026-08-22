@@ -293,6 +293,33 @@ En `/panel/admin`:
 
 ---
 
+## Actualizar el despliegue
+
+```bash
+./scripts/actualizar.sh
+```
+
+Hace el `git pull`, reconstruye, levanta y comprueba. Y antes de levantar, crea
+`data/` y le pone el dueño correcto.
+
+Ese último paso es el que importa: **todo lo que sobrevive a una actualización
+vive en `./data`** (base de datos, copias e imágenes subidas), y esa carpeta
+está en `.gitignore`, así que el pull nunca la toca. Pero si falta, Docker la
+crea **como root** al montar el volumen, mientras la aplicación corre como
+usuario sin privilegios. Todo arranca aparentemente bien y el fallo aparece
+después, al subir un icono:
+
+> El servidor no puede escribir en su carpeta de archivos.
+
+Si ya te ha pasado, se arregla en una línea y no se pierde nada:
+
+```bash
+sudo chown -R 10001:10001 data/archivos
+docker compose restart api
+```
+
+---
+
 ## Comprobación automática
 
 Antes de nada, esto revisa la cadena entera y dice qué falla y por qué:

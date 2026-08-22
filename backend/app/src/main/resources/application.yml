@@ -33,7 +33,7 @@ spring:
     # Con 'non_null', un campo nulo desaparece del JSON: un espacio destacado
     # libre no llegaba como {"posicion":1,"servidor":null} sino como
     # {"posicion":1}. En el cliente, `servidor !== null` es CIERTO cuando el
-    # campo no existe —undefined no es null—, asi que los cinco huecos vacios
+    # campo no existe —undefined no es null—, asi que los huecos vacios
     # pasaban un filtro pensado para descartarlos y reventaban despues.
     #
     # Ademas, todos los tipos de TypeScript declaran `campo: string | null`. Que

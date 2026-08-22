@@ -29,8 +29,15 @@ Dos problemas independientes:
 
 ### 1. Venta a precio fijo, no subasta
 
-Se venden **5 slots destacados** con precio configurable por slot y por
+Se venden **6 slots destacados** con precio configurable por slot y por
 periodo. Sin pujas.
+
+> Eran 5 hasta la migración V24 (2026-08-21). Se pintan de dos en dos y con
+> cinco la última fila quedaba coja, con un hueco suelto que se lee como un
+> fallo de maquetación en vez de como el espacio libre que es. El número de
+> slots no es parte de esta decisión —lo es el precio fijo— y por eso se cambia
+> aquí en lugar de abrir un ADR nuevo. El tope vive en el CHECK de
+> `featured_slots`.
 
 | | Subasta (descartada) | **Precio fijo (adoptada)** |
 |---|---|---|
@@ -42,14 +49,14 @@ periodo. Sin pujas.
 
 ### 2. Separación estricta de lo orgánico
 
-Los 5 slots **no son las posiciones 1 a 5 del ranking**. Son un bloque
+Los 6 slots **no son las posiciones 1 a 6 del ranking**. Son un bloque
 independiente, situado por encima del ranking, con tratamiento visual distinto
 y etiquetado explícito como patrocinado.
 
 ```
 ┌─────────────────────────────────────┐
-│  ⭐ DESTACADOS  (patrocinado)        │   ← 5 slots vendidos
-│  slot 1 · slot 2 · slot 3 · 4 · 5   │
+│  ⭐ DESTACADOS  (patrocinado)        │   ← 6 slots vendidos
+│  slot 1 · 2 · 3 · 4 · 5 · 6         │
 └─────────────────────────────────────┘
 ┌─────────────────────────────────────┐
 │  RANKING                            │   ← orgánico, intacto
