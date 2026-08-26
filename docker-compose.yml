@@ -53,6 +53,12 @@ services:
     build:
       context: ./backend
     restart: unless-stopped
+    # Docker mete un init (tini) como PID 1 del contenedor, con la JVM debajo.
+    # Sin esto, cuando el HEALTHCHECK del Dockerfile se pasa del timeout, Docker
+    # mata al 'sh' y sus hijos (wget, grep) quedan huerfanos colgando de la JVM,
+    # que no los entierra. Cada timeout dejaba dos zombies para siempre: 58 vivos
+    # tras tres dias de despliegue. tini si los entierra.
+    init: true
     depends_on:
       db:
         # Espera a que la base responda de verdad, no solo a que el contenedor
@@ -125,6 +131,11 @@ services:
     build:
       context: ./frontend
     restart: unless-stopped
+    # Aqui no hay healthcheck, asi que no hay zombies. Se pone por lo otro que
+    # arregla tini: Node como PID 1 ignora SIGTERM salvo que el programa lo
+    # atienda, y `docker compose down` acaba esperando diez segundos a cada
+    # parada para terminar matandolo a lo bruto. Con tini delante, para al vuelo.
+    init: true
     depends_on:
       - api
     environment:

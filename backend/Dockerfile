@@ -66,7 +66,12 @@ EXPOSE 8080
 # que Docker le imponga, sin tener que recalcularlo a mano en cada despliegue.
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC"
 
+# El '-T 3' no es adorno: sin el, wget espera indefinidamente y quien corta es
+# Docker al cumplirse el timeout de 5s. Docker mata al 'sh', pero wget y grep
+# sobreviven huerfanos y se quedan colgando de la JVM. Con 3 segundos, wget se
+# rinde solo y el chequeo termina por su cuenta antes de que nadie lo mate.
+# El 'init: true' del docker-compose entierra a los que aun asi se escapen.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD wget -qO- http://localhost:8080/actuator/health | grep -q '"status":"UP"' || exit 1
+  CMD wget -q -T 3 -O - http://localhost:8080/actuator/health | grep -q '"status":"UP"' || exit 1
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]
