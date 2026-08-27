@@ -99,13 +99,33 @@ done
 # --- Web ---------------------------------------------------------------------
 titulo "Web"
 
-for ruta in / /servidores /plugin /destacar /registro /login /robots.txt /sitemap.xml; do
+for ruta in / /servidores /plugin /registro /login /robots.txt /sitemap.xml; do
   estado=$(codigo "$WEB$ruta")
   if [ "$estado" = "200" ]; then
     ok "$ruta"
   else
     mal "$ruta devuelve $estado" "docker compose logs web --tail 50"
   fi
+done
+
+# --- Puertas del panel -------------------------------------------------------
+titulo "Puertas del panel"
+
+# Destacar un servidor NO tiene pagina publica de venta: se hace sobre un
+# servidor propio ya registrado, asi que la puerta de entrada es la sesion y
+# vive bajo /panel. Este bloque estuvo pidiendo /destacar durante semanas, que
+# se movio a /panel/destacar el 18/08/2026, y cantaba un 404 en cada despliegue.
+#
+# Se comprueba lo contrario que arriba: sin sesion, estas rutas tienen que
+# redirigir al login. Un 200 aqui significaria contenido privado servido a
+# cualquiera, que es mucho peor que un 404.
+for ruta in /panel /panel/destacar /panel/admin; do
+  estado=$(codigo "$WEB$ruta")
+  case "$estado" in
+    30*) ok "$ruta redirige al login (sin sesion)" ;;
+    200) mal "$ruta responde 200 sin sesion" "el panel se esta sirviendo a cualquiera: revisa frontend/src/app/panel/layout.tsx" ;;
+    *)   mal "$ruta devuelve $estado" "docker compose logs web --tail 50" ;;
+  esac
 done
 
 # --- Límite de subida --------------------------------------------------------
