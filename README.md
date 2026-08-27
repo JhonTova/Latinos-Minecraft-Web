@@ -51,9 +51,12 @@ LatinosMC/
 │   └── requisitos/        ← los 19 documentos de entrada
 ├── scripts/               ← actualizar.sh, comprobar.sh
 ├── backend/               ← Java 21 + Spring Boot (Maven multi-módulo)
-├── frontend/              ← Next.js 16 + Tailwind 4
-└── plugin/                ← Plugin Paper
+└── frontend/              ← Next.js 16 + Tailwind 4
 ```
+
+El plugin **no está en este repositorio**: vive en
+[JhonTova/LatinosMC](https://github.com/JhonTova/LatinosMC). Ver
+[El plugin](#el-plugin).
 
 ---
 
@@ -86,7 +89,6 @@ npm run dev                        # http://localhost:3000
 
 ```bash
 cd backend && mvn verify           # 329 tests
-cd plugin  && mvn verify           # 22 tests
 cd frontend && npm run lint && npm run build
 ```
 
@@ -100,14 +102,23 @@ no debe. Sin ellos, las reglas se erosionan solas.
 Es el último eslabón del bucle: pregunta a la plataforma por votos nuevos y
 entrega la recompensa dentro del servidor.
 
-El código está en `plugin/`, pero **se distribuye desde su propio repositorio
-público**, [JhonTova/LatinosMC](https://github.com/JhonTova/LatinosMC), que es de
-donde salen las releases con el `.jar`. Ahí está la documentación para quien lo
-instala: requisitos, configuración y comandos.
+Su código **ya no está en este repositorio**. Vive en el repositorio público
+[JhonTova/LatinosMC](https://github.com/JhonTova/LatinosMC), que es la fuente de
+verdad y de donde salen las releases con el `.jar`. Allí está también la
+documentación para quien lo instala: requisitos, configuración y comandos.
 
-> ⚠️ Las dos copias se sincronizan **a mano**. Un arreglo hecho aquí no llega al
-> repo público solo, y los dueños de servidores seguirían descargando el `.jar`
-> viejo. Al tocar `plugin/`, replica y publica release nueva.
+Estaba duplicado en los dos sitios y las copias se sincronizaban a mano, así que
+un arreglo hecho aquí no llegaba al `.jar` que descargan los dueños de
+servidores. Ahora solo hay una copia.
+
+```bash
+git clone https://github.com/JhonTova/LatinosMC.git
+cd LatinosMC && mvn verify          # 22 tests
+```
+
+El contrato entre ambos son las cuatro rutas `/api/v1/plugin/*`. Al cambiarlas
+en el backend hay que actualizar el plugin en su repositorio y publicar una
+release nueva.
 
 ---
 

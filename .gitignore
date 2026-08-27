@@ -64,3 +64,13 @@ DESPLIEGUE.md
 
 # Notas de trabajo personales de cada desarrollador.
 *.local.md
+
+# =============================================================================
+# El plugin vive en su propio repositorio
+# =============================================================================
+# El codigo sigue aqui en disco para poder compilarlo y probarlo contra el
+# backend, pero la fuente de verdad es el repositorio publico
+# github.com/JhonTova/LatinosMC, que es de donde salen las releases con el .jar.
+# Tenerlo tambien aqui creaba dos copias que divergen en silencio: un arreglo
+# hecho en esta no llega a la que descargan los duenos de servidores.
+plugin/

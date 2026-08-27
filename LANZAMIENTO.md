@@ -111,12 +111,16 @@ Luego actualiza `DB_PASSWORD` en el `.env` y `docker compose up -d`.
 
 ### 5. Publicar el plugin y enlazarlo
 
+El plugin vive en su propio repositorio,
+[JhonTova/LatinosMC](https://github.com/JhonTova/LatinosMC):
+
 ```bash
-cd plugin && mvn clean package
-# -> plugin/target/LatinosMC-0.1.0.jar
+git clone https://github.com/JhonTova/LatinosMC.git
+cd LatinosMC && mvn clean package
+# -> target/LatinosMC-0.1.0.jar
 ```
 
-Súbelo a una release de GitHub y pega el enlace en `/panel/admin` →
+Sube ese `.jar` a una release de GitHub y pega el enlace en `/panel/admin` →
 **Enlace de descarga del plugin**. Sin él, el botón no aparece: es mejor no
 tenerlo que tenerlo llevando a ninguna parte.
 
