@@ -38,18 +38,14 @@ export function Heroe({
   cifras: EstadisticasPlataforma | null;
 }) {
   return (
-    <section className="relative overflow-hidden">
-      {/* Resplandor detrás de la marca. Un solo degradado radial, no una imagen:
-          cero peticiones de red y se adapta al tema claro y al oscuro. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(60% 60% at 80% 30%, color-mix(in oklch, var(--primary) 16%, transparent), transparent 70%)",
-        }}
-      />
-
+    // Resplandor detrás de la marca: degradados radiales, no una imagen — cero
+    // peticiones de red y se adaptan al tema claro y al oscuro.
+    //
+    // Ahora se mueven. Un ciclo de veinte segundos no se ve moverse: se nota que
+    // la portada está viva cuando llevas unos segundos en ella, que es
+    // exactamente la dosis que separa un acabado cuidado de un salvapantallas.
+    // Con `prefers-reduced-motion` se queda quieto, como todo lo demás.
+    <section className="aurora overflow-hidden">
       <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[1fr_auto]">
         <div className="min-w-0">
           {cifras && cifras.servidores > 0 && (

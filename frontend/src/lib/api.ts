@@ -36,6 +36,15 @@ export interface FichaPublica {
   motd: string | null;
   /** Si se puede jugar desde móvil o consola. Lo declara el dueño (ADR-0030). */
   soportaBedrock: boolean;
+  /**
+   * IP y puerto de Geyser, en dos campos y no en una cadena `host:puerto`.
+   *
+   * El cliente de Bedrock los pide en casillas separadas, así que juntarlos
+   * obligaría a partirlos otra vez al pintarlos. `null` mientras el dueño no los
+   * haya puesto: la etiqueta de Bedrock sale igual, pero sin dirección.
+   */
+  hostBedrock: string | null;
+  puertoBedrock: number | null;
 }
 
 /** Ficha pública de un servidor. Devuelve `null` si no existe o no está activo. */

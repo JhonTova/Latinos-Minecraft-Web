@@ -81,7 +81,9 @@ public class DirectorioController {
                                 .toList(),
                         ranking.tendenciaDiaria(servidor.id(), 7),
                         servidor.motdJson(),
-                        servidor.soportaBedrock()));
+                        servidor.soportaBedrock(),
+                        servidor.hostBedrock(),
+                        servidor.puertoBedrock()));
     }
 
     private String urlDe(String clave) {
@@ -123,5 +125,17 @@ public class DirectorioController {
              */
             String motd,
             /** Acepta movil y consola, normalmente via Geyser (ADR-0030). */
-            boolean soportaBedrock) {}
+            boolean soportaBedrock,
+            /**
+             * IP y puerto de Geyser, en dos campos separados y no en una sola
+             * cadena (V25).
+             *
+             * <p>No es un capricho del modelo: el cliente de Bedrock pide las
+             * dos cosas en casillas distintas, asi que juntarlas aqui obligaria
+             * a partirlas otra vez al pintarlas. Null cuando el dueño todavia no
+             * las ha puesto: la ficha enseña la etiqueta igual, pero sin
+             * direccion.
+             */
+            String hostBedrock,
+            Integer puertoBedrock) {}
 }

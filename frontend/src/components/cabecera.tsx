@@ -237,18 +237,11 @@ export async function PieDePagina() {
   const formato = new Intl.NumberFormat("es-ES");
 
   return (
-    <footer className="relative mt-auto overflow-hidden border-t border-border bg-surface-sunken">
-      {/* Filete de marca sobre el borde. Es lo que hace que el pie se lea como
-          el cierre de la página y no como una zona que empieza sin más. */}
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-px"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, var(--primary) 25%, var(--oro-400) 60%, transparent)",
-        }}
-      />
-
+    // El filete de marca que había aquí —una línea de un píxel que pasaba de
+    // morado a dorado y se perdía en el fondo— cerraba la página con una raya de
+    // tres colores. Ahora el cierre lo hace un resplandor ancho del acento sobre
+    // el borde: mismo trabajo, sin una línea que mirar.
+    <footer className="aurora-borde mt-auto overflow-hidden border-t border-border bg-surface-sunken">
       <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr]">
           <div className="min-w-0">

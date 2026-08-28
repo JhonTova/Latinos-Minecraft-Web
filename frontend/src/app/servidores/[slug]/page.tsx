@@ -3,7 +3,7 @@ import {
   DatosEstructurados,
   esquemaDeServidor,
 } from "@/components/datos-estructurados";
-import { CopiarIp } from "@/components/copiar-ip";
+import { CopiarIp, DireccionBedrock } from "@/components/copiar-ip";
 import {
   EtiquetaBedrock,
   EtiquetaDeCuenta,
@@ -121,13 +121,29 @@ export default async function PaginaServidor(
           afecta a SU ficha y no a la cabecera ni al pie. Es la diferencia entre
           "personalizar tu página" y "repintar LatinosMC entero".
 
+          `tema-ficha` es lo que hace que el color se note de verdad: sin ella el
+          tema solo pintaba el botón de votar y elegirlo no se sentía como
+          personalizar nada. Ahora tiñe el fondo de la cabecera, las tarjetas de
+          datos y el bloque de reglas — siempre como tinte del fondo del sitio,
+          nunca como color nuevo, para que el texto siga leyéndose igual.
+
           Un código que no exista en el CSS hereda el tema del sitio, que es el
           fallo correcto: la ficha se ve normal en vez de romperse. */}
-      <div data-tema={servidor.tema ?? "DEFECTO"} className="contents">
+      <div
+        data-tema={servidor.tema ?? "DEFECTO"}
+        className="tema-ficha flex flex-1 flex-col"
+      >
 
       {/* El banner rompe el ancho del contenido y llega hasta los bordes. Un
           banner encajonado dentro de la columna parece un anuncio pegado; a
-          sangre completa, parece la portada del servidor. */}
+          sangre completa, parece la portada del servidor.
+
+          Sin `aurora` a propósito: sus resplandores se salen del contenedor —es
+          lo que hace que la luz no parezca una caja— y aquí no hay nada que los
+          recorte, así que en móvil ensancharían la página. Recortarlos contra
+          una franja de 128 px dejaría además solo el borde del degradado, que es
+          justo la parte que peor se ve. El color del dueño ya entra por el
+          degradado de abajo. */}
       <div className="relative">
         {servidor.bannerUrl ? (
           <>
@@ -150,23 +166,42 @@ export default async function PaginaServidor(
             />
           </>
         ) : (
-          <div className="trama-bloques h-28 w-full sm:h-32" />
+          // Sin banner, la trama va sobre el color del servidor en vez de sobre
+          // el fondo gris del sitio. Es lo primero que se ve al abrir la ficha,
+          // y era la mejor ocasión desaprovechada para que el tema se notara.
+          //
+          // El degradado va en el contenedor y la trama dentro: `trama-bloques`
+          // dibuja su cuadrícula en un pseudoelemento a `z-index: -1`, así que
+          // un fondo puesto en el mismo elemento la taparía entera.
+          <div
+            className="h-32 w-full sm:h-40"
+            style={{
+              background:
+                "linear-gradient(to bottom, color-mix(in oklch, var(--primary) 16%, transparent), transparent)",
+            }}
+          >
+            <div className="trama-bloques size-full" aria-hidden />
+          </div>
         )}
       </div>
 
       <main className="mx-auto -mt-12 w-full max-w-3xl flex-1 px-4 pb-24 sm:px-6">
         <div className="entra relative flex items-end gap-4">
           {servidor.iconoUrl ? (
+            // El anillo del color del servidor: el icono es lo primero que se
+            // mira, y enmarcarlo con su tema ata la imagen del dueño al color
+            // que ha elegido en vez de dejar las dos cosas sueltas.
+            //
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={servidor.iconoUrl}
               alt=""
-              className="size-20 shrink-0 rounded-xl border-2 border-bg bg-surface object-cover shadow-md sm:size-24"
+              className="size-20 shrink-0 rounded-xl border-2 border-bg bg-surface object-cover shadow-md ring-2 ring-primary/35 sm:size-24"
             />
           ) : (
             <div
               aria-hidden
-              className="grid size-20 shrink-0 place-items-center rounded-xl border-2 border-bg bg-primary-subtle text-3xl font-semibold text-primary shadow-md sm:size-24"
+              className="grid size-20 shrink-0 place-items-center rounded-xl border-2 border-bg bg-primary-subtle text-3xl font-semibold text-primary shadow-md ring-2 ring-primary/35 sm:size-24"
             >
               {servidor.nombre.trim().charAt(0).toUpperCase()}
             </div>
@@ -214,13 +249,40 @@ export default async function PaginaServidor(
           <CopiarIp direccion={servidor.direccion} />
         </div>
 
+        {/* La dirección de Bedrock, cuando el dueño la ha puesto (V25).
+            Va inmediatamente debajo de la de Java y no escondida entre los
+            datos: quien juega desde el móvil llega a la ficha, ve la etiqueta
+            «Bedrock Edition» y lo siguiente que necesita es exactamente esto.
+            Sin ello, la etiqueta prometía algo que la página no daba.
+
+            IP y puerto separados porque el cliente de Bedrock los pide en dos
+            casillas distintas: pegarle «ip:puerto» no le sirve. */}
+        {servidor.hostBedrock && servidor.puertoBedrock && (
+          <div className="entra entra-2 mt-3">
+            <DireccionBedrock
+              host={servidor.hostBedrock}
+              puerto={servidor.puertoBedrock}
+            />
+          </div>
+        )}
+
         {/* Dos columnas en escritorio: los datos a la izquierda, el voto a la
             derecha y siempre visible. El voto es la acción por la que existe
             esta página; enterrarlo al final del scroll sería esconderlo. */}
         <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
           <div className="order-2 space-y-6 lg:order-1">
             <section className="entra entra-3">
-              <h2 className="mb-3 font-semibold">Datos del servidor</h2>
+              {/* El filete corto del color del servidor delante del título.
+                  Es una marca de sección barata y, sobre todo, es del tema del
+                  dueño: repetida en cada encabezado de la ficha hace que el
+                  color se lea como identidad y no como un botón pintado. */}
+              <h2 className="mb-3 flex items-center gap-2 font-semibold">
+                <span
+                  aria-hidden
+                  className="h-4 w-1 shrink-0 rounded-full bg-primary"
+                />
+                Datos del servidor
+              </h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Dato
                   etiqueta="Jugadores ahora"
@@ -256,7 +318,9 @@ export default async function PaginaServidor(
                   valor={servidor.soportaBedrock ? "Sí" : "No"}
                   nota={
                     servidor.soportaBedrock
-                      ? "Se entra desde móvil o consola"
+                      ? servidor.hostBedrock
+                        ? `Puerto ${servidor.puertoBedrock}`
+                        : "Se entra desde móvil o consola"
                       : "Solo Java Edition"
                   }
                 />
@@ -330,7 +394,7 @@ function Dato({
   monoespaciada?: boolean;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-surface p-4 shadow-sm">
+    <div className="tarjeta-viva borde-tema superficie-tema rounded-lg border p-4 shadow-sm hover:border-primary/50">
       <div className="text-xs text-subtle">{etiqueta}</div>
       <div className="mt-1 flex items-end justify-between gap-2">
         <span
@@ -362,7 +426,7 @@ function ComoFunciona({
   ventanaHoras: number;
 }) {
   return (
-    <section className="rounded-lg border border-border bg-surface-sunken p-5">
+    <section className="borde-tema hundido-tema filete-tema rounded-lg border p-5">
       <h2 className="font-semibold">Cómo funciona el voto</h2>
 
       <ul className="mt-3 space-y-3 text-sm">

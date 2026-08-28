@@ -81,9 +81,12 @@ export default async function PaginaPanel() {
 
       {alcanzoElLimite && (
         <div className="mb-6">
+          {/* Sin ofrecer un plan de pago: todavía no existe ninguno que se
+              pueda contratar, y mandar a alguien a una puerta cerrada es peor
+              que decirle simplemente cuál es el límite. */}
           <Aviso tono="info">
-            Has llegado al límite de {org.limiteServidores} servidores del plan
-            gratuito. Con Plus puedes tener los que quieras.
+            Has llegado al límite de {org.limiteServidores} servidores. Da de
+            baja uno que ya no uses si quieres añadir otro.
           </Aviso>
         </div>
       )}

@@ -538,7 +538,7 @@ public class ServerRepository {
                                -- Columnas calculadas: la regla de que imagen se
                                -- enseña vive en la base de datos (ADR-0027).
                                s.display_icon_key, s.display_banner_key, s.motd_json,
-                               s.supports_bedrock,
+                               s.supports_bedrock, s.bedrock_host, s.bedrock_port,
                                s.version_min, s.version_max, s.hosting_region, s.theme_code,
                                p.players_online, p.players_max, p.is_online,
                                (SELECT COUNT(*) FROM votes v
@@ -584,7 +584,9 @@ public class ServerRepository {
                             rs.getString("version_max"),
                             rs.getString("hosting_region"),
                             rs.getString("theme_code"),
-                            rs.getBoolean("supports_bedrock"));
+                            rs.getBoolean("supports_bedrock"),
+                            rs.getString("bedrock_host"),
+                            rs.getObject("bedrock_port", Integer.class));
                 })
                 .optional();
     }
@@ -609,7 +611,15 @@ public class ServerRepository {
             String region,
             String tema,
             /** Acepta movil y consola. Lo declara el dueño, no se verifica (ADR-0030). */
-            boolean soportaBedrock) {}
+            boolean soportaBedrock,
+            /**
+             * IP que escriben los jugadores de Bedrock. Null si el dueño no la
+             * ha puesto: la casilla dice que se puede entrar, esto dice por
+             * donde.
+             */
+            String hostBedrock,
+            /** Puerto de Geyser. Bedrock lo pide aparte de la IP. */
+            Integer puertoBedrock) {}
 
     /**
      * Da de baja un servidor.
@@ -847,7 +857,8 @@ public class ServerRepository {
                                icon_source, banner_source,
                                icon_key, banner_key,
                                icon_key_auto, banner_key_auto,
-                               motd_json, auto_images_blocked_at, supports_bedrock,
+                               motd_json, auto_images_blocked_at,
+                               supports_bedrock, bedrock_host, bedrock_port,
                                -- El dueño tiene que poder leer por que su
                                -- servidor no aparece. Un servidor que desaparece
                                -- sin explicacion es un ticket de soporte seguro y
@@ -883,7 +894,9 @@ public class ServerRepository {
                         rs.getString("motd_json"),
                         rs.getTimestamp("auto_images_blocked_at") != null,
                         rs.getString("suspended_reason"),
-                        rs.getBoolean("supports_bedrock")))
+                        rs.getBoolean("supports_bedrock"),
+                        rs.getString("bedrock_host"),
+                        rs.getObject("bedrock_port", Integer.class)))
                 .optional();
     }
 
@@ -921,7 +934,11 @@ public class ServerRepository {
             /** Por que esta suspendido, para enseñarselo al dueño. Null si no lo esta. */
             String motivoDeSuspension,
             /** Acepta movil y consola, normalmente via Geyser. Lo declara el dueño (ADR-0030). */
-            boolean soportaBedrock) {}
+            boolean soportaBedrock,
+            /** IP de Geyser, la que escriben los jugadores de Bedrock. Null si no la ha puesto. */
+            String hostBedrock,
+            /** Puerto de Geyser. El cliente de Bedrock lo pide en su propio campo. */
+            Integer puertoBedrock) {}
 
     /**
      * Actualiza lo que el dueño puede cambiar de su ficha.
@@ -934,6 +951,9 @@ public class ServerRepository {
      * <p>La condicion por organizacion viaja en el WHERE. Es lo que impide que
      * alguien edite la ficha de otro pasando su identificador: si se comprobara
      * antes en codigo, quedaria una ventana entre la comprobacion y la escritura.
+     *
+     * @param hostBedrock IP de Geyser, o null si no la hay. Va junto al puerto:
+     *     la base de datos rechaza tener uno sin el otro (V25).
      */
     public int actualizarFicha(
             UUID servidorId,
@@ -943,7 +963,9 @@ public class ServerRepository {
             String versionMaxima,
             String region,
             String tema,
-            boolean soportaBedrock) {
+            boolean soportaBedrock,
+            String hostBedrock,
+            Integer puertoBedrock) {
 
         return jdbc.sql(
                         """
@@ -954,6 +976,8 @@ public class ServerRepository {
                                hosting_region   = :region,
                                theme_code       = :tema,
                                supports_bedrock = :bedrock,
+                               bedrock_host     = :hostBedrock,
+                               bedrock_port     = :puertoBedrock,
                                updated_at       = now()
                          WHERE id = :id AND organization_id = :org AND deleted_at IS NULL
                         """)
@@ -965,6 +989,8 @@ public class ServerRepository {
                 .param("region", region)
                 .param("tema", tema)
                 .param("bedrock", soportaBedrock)
+                .param("hostBedrock", hostBedrock)
+                .param("puertoBedrock", puertoBedrock)
                 .update();
     }
 

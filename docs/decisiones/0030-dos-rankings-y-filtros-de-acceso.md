@@ -87,6 +87,26 @@ alimenta el ranking. Solo filtra.
 Bedrock nativo, si algún día hace falta, es un proyecto aparte y este ADR no lo
 cierra.
 
+### Ampliación: la casilla necesitaba dirección (V25)
+
+La casilla sola decía «se puede entrar desde el móvil» y no decía **por dónde**.
+Y ahí estaba el fallo: el cliente de Bedrock no se conecta con una cadena
+`host:puerto` como el de Java —pide la dirección en una casilla y el puerto en
+otra— y el puerto por defecto de Geyser (19132) no es el de Java (25565).
+
+Resultado: el jugador de móvil llegaba a la ficha, veía la etiqueta «Bedrock
+Edition», copiaba la dirección de Java y no podía entrar. La etiqueta prometía
+algo que la página no daba.
+
+Se añaden **dos columnas**, `bedrock_host` y `bedrock_port`, no una cadena. Es lo
+que pide el formulario del cliente, y guardarlo junto obligaría a partirlo al
+pintarlo, con el riesgo de partir mal una IPv6. Las dos son nulables y la base de
+datos exige que estén las dos o ninguna: los servidores que ya habían marcado la
+casilla no podían quedarse inválidos por un campo que ayer no existía.
+
+Sigue siendo **declarado y no verificado**, como todo lo demás de esta decisión:
+no sondeamos Bedrock, así que esto se enseña y nunca puntúa.
+
 ## Decisión 4 — La fila del ranking responde a su propio ancho
 
 Detalle de implementación que merece quedar escrito porque se descubrió

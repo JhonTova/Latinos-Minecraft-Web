@@ -89,9 +89,13 @@ public class ServerController {
 
         Integer limite = organizaciones.limiteDeServidores(organizacionId);
         if (limite != null && servidores.contarDe(organizacionId) >= limite) {
+            // Sin mencionar ningun plan de pago: todavia no existe ninguno que
+            // se pueda contratar (V26), y ofrecer una salida que no se puede
+            // comprar es peor que no ofrecer ninguna.
             throw new DomainException.Conflict(
                     "plan.server_limit",
-                    "Tu plan permite " + limite + " servidores. Amplia a Plus para tener servidores ilimitados.");
+                    "Puedes tener hasta " + limite
+                            + " servidores. Da de baja uno que ya no uses si quieres añadir otro.");
         }
 
         var resultado = registro.registrar(new RegisterServerService.Peticion(
@@ -157,6 +161,8 @@ public class ServerController {
                         .map(com.latinosmc.servers.ServerRepository.Modalidad::codigo)
                         .toList(),
                 detalle.soportaBedrock(),
+                detalle.hostBedrock(),
+                detalle.puertoBedrock(),
                 new Imagenes(
                         detalle.iconoAutomatico(),
                         detalle.bannerAutomatico(),
@@ -195,6 +201,14 @@ public class ServerController {
                 .orElseThrow(() -> new DomainException.NotFound(
                         "server.not_found", "Ese servidor no existe o no puedes gestionarlo."));
 
+        boolean bedrock = Boolean.TRUE.equals(peticion.soportaBedrock());
+
+        // La direccion de Geyser solo existe si la casilla esta marcada. Sin
+        // esto, desmarcarla dejaria en la ficha una IP de Bedrock huerfana que
+        // el dueño ya no ve en el formulario y no puede corregir.
+        String hostBedrock = bedrock ? recortar(peticion.hostBedrock(), 255) : null;
+        Integer puertoBedrock = hostBedrock == null ? null : puertoDeBedrock(peticion.puertoBedrock());
+
         servidores.actualizarFicha(
                 servidorId,
                 organizacionId,
@@ -203,7 +217,9 @@ public class ServerController {
                 recortar(peticion.versionMaxima(), 12),
                 recortar(peticion.region(), 40),
                 peticion.tema() == null || peticion.tema().isBlank() ? "DEFECTO" : peticion.tema(),
-                Boolean.TRUE.equals(peticion.soportaBedrock()));
+                bedrock,
+                hostBedrock,
+                puertoBedrock);
 
         servidores.reemplazarModalidades(
                 servidorId, peticion.modalidades() == null ? List.of() : peticion.modalidades());
@@ -265,6 +281,24 @@ public class ServerController {
 
         log.info("Servidor {} dado de baja por {}", servidorId, usuario.id());
         return java.util.Map.of("dadoDeBaja", true);
+    }
+
+    /**
+     * Puerto de Geyser, con el de Bedrock por defecto cuando no viene.
+     *
+     * <p>19132 y no un error: es el puerto que usa Geyser recien instalado, asi
+     * que el dueño que deja el campo vacio esta diciendo "el de siempre". Pedirle
+     * que lo escriba para poder guardar seria burocracia sobre el caso mas
+     * comun.
+     *
+     * <p>Un valor fuera de rango tampoco se rechaza aqui: la validacion de la
+     * peticion ya lo ha parado antes de llegar. Esto solo cierra el caso "no lo
+     * mando".
+     */
+    private static final int PUERTO_BEDROCK_POR_DEFECTO = 19132;
+
+    private Integer puertoDeBedrock(Integer declarado) {
+        return declarado == null ? PUERTO_BEDROCK_POR_DEFECTO : declarado;
     }
 
     /** Vacio se guarda como null: una cadena vacia en base de datos no significa nada. */
@@ -353,6 +387,10 @@ public class ServerController {
             List<String> modalidades,
             /** Acepta movil y consola. Lo declara el dueño (ADR-0030). */
             boolean soportaBedrock,
+            /** IP de Geyser. Null mientras el dueño no la haya puesto. */
+            String hostBedrock,
+            /** Puerto de Geyser, que Bedrock pide aparte de la IP. */
+            Integer puertoBedrock,
             Imagenes imagenes,
             /**
              * Por que esta suspendido, si lo esta (ADR-0028).
@@ -413,7 +451,27 @@ public class ServerController {
              * casilla del dueño. Con {@code Boolean} se distingue "no lo manda"
              * de "lo manda en false".
              */
-            Boolean soportaBedrock) {}
+            Boolean soportaBedrock,
+
+            /**
+             * IP o dominio que escriben los jugadores de Bedrock.
+             *
+             * <p>Va aparte del host de Java porque casi nunca coincide el
+             * puerto y muchas veces tampoco el dominio: Geyser suele escuchar en
+             * otra maquina o detras de otro subdominio.
+             */
+            @jakarta.validation.constraints.Size(max = 255) String hostBedrock,
+
+            /**
+             * Puerto de Geyser. Vacio se guarda como 19132, el de Bedrock por
+             * defecto.
+             *
+             * <p>{@code Integer} y no {@code int} justamente para poder
+             * distinguir "no lo mando" de un cero, que con el primitivo
+             * llegarian iguales y el cero no es un puerto.
+             */
+            @jakarta.validation.constraints.Min(1) @jakarta.validation.constraints.Max(65535)
+                    Integer puertoBedrock) {}
 
     public record ServidorPropio(
             UUID id,

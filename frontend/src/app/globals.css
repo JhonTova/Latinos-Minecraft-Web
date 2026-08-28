@@ -486,6 +486,184 @@
   pointer-events: none;
 }
 
+/* --------------------------------------------------------------------------
+   AURORA
+
+   Sustituye a los filetes de dos colores que habia bajo la cabecera del ranking
+   y sobre el pie. Aquella linea morada-dorada-blanca no separaba nada: era un
+   borde con tres colores encima, y en cuanto el ojo la encontraba se llevaba
+   toda la atencion de un bloque que no la necesitaba.
+
+   Esto hace el mismo trabajo —decir "aqui empieza otra cosa"— con luz en vez de
+   con una raya, y ademas se mueve muy despacio, que es lo que separa una pieza
+   cuidada de un degradado pegado.
+
+   MONOCROMO A PROPOSITO. Solo el acento vigente, ninguna mezcla con el oro. Dos
+   colores repartidos a partes iguales no se leen como una marca (ver la nota del
+   oro mas arriba), y ademas asi la aurora hereda el tema del servidor cuando
+   esta dentro de una ficha con `data-tema`.
+
+   Solo se anima `transform`: el degradado se pinta una vez y el navegador se
+   limita a moverlo. Animar el propio degradado obligaria a repintarlo en cada
+   fotograma.
+
+   QUIEN LA USE TIENE QUE RECORTARLA. Los resplandores se salen del contenedor a
+   proposito —es lo que hace que la luz no parezca una caja— asi que el elemento
+   necesita `overflow-hidden` (o `.destello`, que ya lo trae). Sin eso, en movil
+   el que sobresale por la derecha ensancha la pagina y aparece una barra de
+   desplazamiento horizontal. */
+@keyframes deriva {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(-5%, 4%, 0) scale(1.14); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+.aurora {
+  position: relative;
+  isolation: isolate;
+}
+
+.aurora::before,
+.aurora::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.aurora::before {
+  top: -30%;
+  right: -8%;
+  width: min(42rem, 90%);
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle at center,
+    color-mix(in oklch, var(--primary) 20%, transparent),
+    transparent 68%
+  );
+  animation: deriva 19s var(--ease-suave) infinite;
+}
+
+.aurora::after {
+  bottom: -35%;
+  left: -10%;
+  width: min(30rem, 75%);
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle at center,
+    color-mix(in oklch, var(--primary) 13%, transparent),
+    transparent 70%
+  );
+  animation: deriva 27s var(--ease-suave) infinite reverse;
+}
+
+/* Variante de una sola luz, ancha y pegada al borde superior. Es la del pie:
+   ahi no hace falta profundidad, hace falta que el corte con el contenido de
+   arriba deje de ser una linea. */
+.aurora-borde {
+  position: relative;
+  isolation: isolate;
+}
+
+.aurora-borde::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  top: -14rem;
+  left: 50%;
+  width: min(64rem, 130%);
+  height: 28rem;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklch, var(--primary) 14%, transparent),
+    transparent 65%
+  );
+}
+
+/* --------------------------------------------------------------------------
+   DESTELLO
+
+   Un brillo que cruza la tarjeta al pasar el puntero. Dura menos de un segundo
+   y no deja nada detras: es el detalle que hace que una superficie parezca
+   material en vez de un rectangulo de color.
+
+   No se pone en las filas del ranking. Ahi hay decenas a la vez y lo que en una
+   pieza es un acabado, repetido cincuenta veces es una discoteca. */
+@keyframes destellar {
+  from { transform: translateX(-130%) skewX(-14deg); }
+  to   { transform: translateX(260%)  skewX(-14deg); }
+}
+
+.destello {
+  position: relative;
+  overflow: hidden;
+}
+
+.destello::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 28%;
+  pointer-events: none;
+  transform: translateX(-130%) skewX(-14deg);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklch, var(--primary) 14%, transparent),
+    transparent
+  );
+}
+
+.destello:hover::after,
+.destello:focus-within::after {
+  animation: destellar 850ms var(--ease-suave);
+}
+
+/* En tactil no hay puntero que pasar por encima, asi que el destello nunca se
+   dispararia; y si se disparara al tocar, se quedaria congelado a medias. */
+@media (hover: none) {
+  .destello::after {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   HALO
+
+   Resplandor que respira alrededor de un icono. Se usa con cuentagotas —el
+   trofeo del ranking y poco mas— porque su trabajo es señalar el elemento mas
+   importante de la pantalla, y dos cosas señaladas no señalan ninguna. */
+@keyframes respirar {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%      { opacity: 0.7;  transform: scale(1.16); }
+}
+
+.halo {
+  position: relative;
+  isolation: isolate;
+}
+
+.halo::before {
+  content: "";
+  position: absolute;
+  inset: -35%;
+  z-index: -1;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklch, var(--primary) 40%, transparent),
+    transparent 68%
+  );
+  animation: respirar 4.5s var(--ease-suave) infinite;
+}
+
 /* Punto que late: sirve para "en linea". El latido comunica actividad en
    tiempo real de una forma que un punto fijo no puede. */
 @keyframes latido {
@@ -536,6 +714,11 @@
    gusto podría dejar su ficha ilegible —texto claro sobre fondo claro— y el
    problema lo tendríamos nosotros. Los fondos y el texto siguen siendo los del
    sitio, así que el contraste está garantizado pase lo que pase.
+
+   Lo que SÍ se hace, más abajo (`.tema-ficha`), es que esas tres variables
+   alcancen a toda la ficha en lugar de quedarse en el botón de votar. Elegir un
+   color y ver cambiar un solo recuadro no se siente como personalizar tu página:
+   se siente como que la opción no funciona.
    ========================================================================== */
 
 [data-tema="DEFECTO"] {
@@ -600,3 +783,40 @@
 :root[data-theme="dark"] [data-tema="OCEANO"]    { --primary: oklch(0.7 0.13 245);  --primary-hover: oklch(0.8 0.1 245);  --primary-subtle: oklch(0.26 0.05 245); }
 :root[data-theme="dark"] [data-tema="AMATISTA"]  { --primary: oklch(0.7 0.15 300);  --primary-hover: oklch(0.8 0.12 300); --primary-subtle: oklch(0.26 0.055 300); }
 :root[data-theme="dark"] [data-tema="ORO"]       { --primary: oklch(0.78 0.14 75);  --primary-hover: oklch(0.86 0.11 75); --primary-subtle: oklch(0.26 0.05 75); }
+
+/* ==========================================================================
+   ALCANCE DEL TEMA DENTRO DE UNA FICHA
+
+   El tema del dueño ya redefinia `--primary` para toda la ficha, pero la ficha
+   apenas lo usaba: el boton de votar, un par de puntos y poco mas. Elegir
+   "Esmeralda" y ver cambiar un recuadro no se lee como "he personalizado mi
+   pagina", se lee como que la opcion esta rota.
+
+   Estas clases llevan el acento a las superficies. Son TINTES del fondo del
+   sitio, no colores nuevos: se mezcla un 4-8 % del acento sobre el fondo que ya
+   habia. Por eso el texto encima sigue cumpliendo AA con cualquiera de los
+   siete temas — el fondo se mueve tan poco que el contraste no cambia de forma
+   apreciable, y aun asi el conjunto se percibe teñido.
+
+   Es la misma idea que la escala neutra tiene una gota de violeta: un tinte
+   comun es lo que hace que unos elementos pertenezcan al mismo sitio.
+   ========================================================================== */
+
+.superficie-tema {
+  background-color: color-mix(in oklch, var(--primary) 4%, var(--surface));
+}
+
+.hundido-tema {
+  background-color: color-mix(in oklch, var(--primary) 7%, var(--surface-sunken));
+}
+
+.borde-tema {
+  border-color: color-mix(in oklch, var(--primary) 24%, var(--border));
+}
+
+/* Filete de acento sobre una tarjeta. Este SI es una linea, pero de un solo
+   color y del tema del servidor: dice "esto es de este servidor", que es
+   justo lo que no decia una raya morada y dorada en todas las fichas. */
+.filete-tema {
+  box-shadow: inset 0 2px 0 0 var(--primary);
+}

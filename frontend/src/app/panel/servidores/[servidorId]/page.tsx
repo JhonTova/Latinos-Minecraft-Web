@@ -133,6 +133,7 @@ export default async function PaginaServidor(
         >
           <EditorDeFicha
             servidorId={servidor.id}
+            nombre={servidor.nombre}
             ficha={{
               descripcion: servidor.descripcion,
               versionMinima: servidor.versionMinima,
@@ -141,6 +142,8 @@ export default async function PaginaServidor(
               tema: servidor.tema,
               modalidades: servidor.modalidades,
               soportaBedrock: servidor.soportaBedrock,
+              hostBedrock: servidor.hostBedrock,
+              puertoBedrock: servidor.puertoBedrock,
             }}
             catalogo={catalogo}
           />

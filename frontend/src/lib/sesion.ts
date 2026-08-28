@@ -83,6 +83,10 @@ export interface FichaServidor {
   modalidades: string[];
   /** Si acepta jugadores de móvil y consola, vía Geyser (ADR-0030). */
   soportaBedrock: boolean;
+  /** IP de Geyser. null mientras el dueño no la haya puesto. */
+  hostBedrock: string | null;
+  /** Puerto de Geyser, que Bedrock pide aparte de la IP. */
+  puertoBedrock: number | null;
   /** De dónde salen el icono y el banner, y qué hay de cada uno (ADR-0027). */
   imagenes: ImagenesServidor;
   /**

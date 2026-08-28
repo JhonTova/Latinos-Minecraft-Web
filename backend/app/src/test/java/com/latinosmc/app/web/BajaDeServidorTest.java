@@ -93,9 +93,12 @@ class BajaDeServidorTest {
                 null,
                 null,
                 false,
-                // Suspension (ADR-0028) y Bedrock (ADR-0030): irrelevantes aqui.
+                // Suspension (ADR-0028) y Bedrock (ADR-0030): irrelevantes aqui,
+                // incluida la direccion de Geyser (V25).
                 null,
-                false);
+                false,
+                null,
+                null);
     }
 
     @Test
