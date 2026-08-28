@@ -240,8 +240,8 @@ export async function PieDePagina() {
     // El filete de marca que había aquí —una línea de un píxel que pasaba de
     // morado a dorado y se perdía en el fondo— cerraba la página con una raya de
     // tres colores. Ahora el cierre lo hace un resplandor ancho del acento sobre
-    // el borde: mismo trabajo, sin una línea que mirar.
-    <footer className="aurora-borde mt-auto overflow-hidden border-t border-border bg-surface-sunken">
+    // el borde: mismo trabajo, sin una línea que mirar y sin moverse.
+    <footer className="resplandor-superior mt-auto overflow-hidden border-t border-border bg-surface-sunken">
       <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr]">
           <div className="min-w-0">

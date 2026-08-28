@@ -89,7 +89,7 @@ export function CopiarIp({
       type="button"
       onClick={() => copiar(direccion)}
       aria-live="polite"
-      className="boton-vivo destello group borde-tema superficie-tema flex w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left shadow-sm hover:border-primary"
+      className="boton-vivo group borde-tema superficie-tema flex w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left shadow-sm hover:border-primary"
     >
       <div className="min-w-0">
         <div className="text-xs text-subtle">Dirección del servidor</div>

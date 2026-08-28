@@ -170,14 +170,13 @@ function CabeceraDelRanking() {
     // desvanecía en blanco. No separaba esta sección de la publicidad de
     // arriba: la única forma de no mirarlo era no mirar el bloque.
     //
-    // Lo que separa ahora es la luz —la aurora del acento, que se mueve muy
-    // despacio— y el brillo que cruza la tarjeta al pasar el puntero. Los dos
-    // son de un solo color y ninguno pide turno.
-    <div className="aurora destello mb-5 rounded-xl border border-border bg-surface-sunken/60">
+    // Lo que separa ahora es un resplandor del acento en la parte de arriba de
+    // la tarjeta. Quieto: la portada no tiene ningún fondo que se mueva solo.
+    <div className="resplandor-superior mb-5 overflow-hidden rounded-xl border border-border bg-surface-sunken/60">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4">
         <span
           aria-hidden
-          className="halo grid size-10 shrink-0 place-items-center rounded-lg bg-primary-subtle text-primary"
+          className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary-subtle text-primary"
         >
           <svg viewBox="0 0 24 24" className="size-5">
             <path
