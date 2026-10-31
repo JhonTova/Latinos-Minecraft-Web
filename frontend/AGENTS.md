@@ -36,8 +36,9 @@ el navegador, en tema claro y oscuro y en ancho de móvil.
 
 - `src/app/`: rutas del App Router. `(auth)` agrupa login y registro sin cambiar
   la URL. `error.tsx` es el estado de error global.
-- `src/components/`: componentes, **un archivo por componente, en español y en
-  kebab-case** (`fila-servidor.tsx`, `panel-de-voto.tsx`). Las piezas básicas
+- `src/components/`: componentes, **un archivo por componente, en kebab-case y
+  en español** (`fila-servidor.tsx`, `panel-de-voto.tsx`; `theme-toggle.tsx` es
+  una excepción antigua). Las piezas básicas
   (campos, botones) están en `ui.tsx`: úsalas antes de crear otras.
 - `src/lib/`: `api.ts` (llamadas al backend desde el servidor), `tipos.ts`,
   `sesion.ts`, `acciones.ts` (Server Actions) y `categorias.ts`.

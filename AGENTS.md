@@ -42,7 +42,11 @@ docker compose up -d --build
 
 Un cambio está terminado cuando `mvn -B verify` (si tocaste `backend/`) y
 `npm run lint` + `npm run build` (si tocaste `frontend/`) pasan. Las pruebas del
-backend no necesitan una base de datos real.
+backend no necesitan una base de datos real. La CI
+(`.github/workflows/ci.yml`) ejecuta lo mismo en cada pull request.
+
+Los comandos están en PowerShell porque el equipo trabaja en Windows; `mvn`,
+`npm` y `java` se escriben igual en bash.
 
 ## Cómo se despliega (importante)
 
@@ -51,8 +55,8 @@ los contenedores. **Lo que llega a `main` llega a producción**, así que:
 
 - Nunca hagas commit directo a `main`: rama corta + pull request.
 - `main` tiene que compilar y pasar las pruebas siempre.
-- Un cambio de esquema es una migración Flyway nueva (`V27__...sql`, la
-  siguiente libre); nunca edites una migración que ya existe, porque ya se
+- Un cambio de esquema es una migración Flyway nueva (el siguiente número
+  libre en `backend/app/src/main/resources/db/migration/`); nunca edites una migración que ya existe, porque ya se
   aplicó en producción.
 
 ## Reglas que no se negocian
@@ -66,8 +70,9 @@ los contenedores. **Lo que llega a `main` llega a producción**, así que:
 3. **El ledger financiero es inmutable**: solo se agregan asientos; nunca
    `UPDATE` ni `DELETE` sobre dinero.
 4. **Lo patrocinado nunca se mezcla con el ranking orgánico** (ADR-0013).
-5. **Ningún módulo del backend lee tablas de otro módulo** (excepción registrada
-   en ADR-0015). Las pruebas de arquitectura lo hacen cumplir.
+5. **Ningún módulo del backend lee tablas de otro módulo.** Las excepciones de
+   solo lectura están en ADR-0015, ampliado por ADR-0019. Las pruebas de
+   arquitectura hacen cumplir la frontera entre módulos.
 6. **Toda validación y autorización ocurre en el backend.** El frontend no es de
    fiar.
 7. **Toda pantalla necesita sus estados**: cargando, vacío, error y sin permisos.

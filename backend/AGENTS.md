@@ -9,7 +9,7 @@ API REST en **Java 21 + Spring Boot**, organizada como **monolito modular**
 ## Comandos (PowerShell, desde `backend/`)
 
 ```powershell
-mvn -B verify                         # compila y ejecuta las 329 pruebas
+mvn -B verify                         # compila y ejecuta todas las pruebas
 mvn -B -pl voting -am verify          # solo un módulo y lo que necesita
 mvn -B -pl app -am verify -Dtest=ArquitecturaTest -Dsurefire.failIfNoSpecifiedTests=false
 mvn -B install -DskipTests            # empaquetar sin pruebas
@@ -17,7 +17,8 @@ java -jar app/target/app-0.1.0-SNAPSHOT.jar   # ejecutar (necesita DB_URL, DB_US
 ```
 
 Las pruebas usan JUnit 5, Mockito y ArchUnit, y **no necesitan PostgreSQL**:
-ninguna prueba toca una base de datos real (es deuda registrada en ADR-0021).
+ninguna prueba toca una base de datos real. Es deuda registrada: ver ADR-0021,
+sección «Lo que estos tests NO cubren», y la política de deuda en ADR-0007.
 Los rastros de excepciones que salen en la consola durante `verify` son de
 pruebas que comprueban errores a propósito: mira el resultado final, no los
 rastros.
@@ -50,9 +51,10 @@ rastros.
 **Dónde va cada cosa:**
 
 - Controladores REST: `app/src/main/java/com/latinosmc/app/web/`.
-- Migraciones: `app/src/main/resources/db/migration/`. La última es
-  `V26__cinco_servidores_por_cuenta.sql`; la siguiente es `V27__descripcion.sql`,
-  con nombre en español y guiones bajos. Nunca edites una que ya existe.
+- Migraciones: `app/src/main/resources/db/migration/`. La siguiente es la
+  de número más alto más uno (orden numérico: `V10` va después de `V9`), con
+  nombre en español y guiones bajos. La skill `migracion-flyway` explica el
+  formato completo. Nunca edites una que ya existe.
 - Las rutas `/api/v1/plugin/*` son el contrato con el plugin (repositorio
   aparte). No las cambies sin avisarlo en el PR.
 
