@@ -6,7 +6,9 @@
 # impide que llegue a main un cambio que no compila o rompe una prueba: ejecuta
 # lo mismo que se pide en AGENTS.md antes de dar un cambio por terminado.
 #
-# No usa secretos, asi que corre igual en cualquier pull request.
+# No usa secretos, asi que corre igual en cualquier pull request. Las acciones
+# van fijadas por SHA (con la version en un comentario): una etiqueta como @v4
+# la puede mover su autor, un SHA no.
 # =============================================================================
 
 name: CI
@@ -20,10 +22,11 @@ on:
 permissions:
   contents: read
 
-# Un push nuevo a la misma rama deja obsoleta la ejecucion anterior.
+# En un PR, un push nuevo deja obsoleta la ejecucion anterior y se cancela. En
+# main no: cada commit que llega a produccion tiene que quedar con su resultado.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # Se decide aqui y no con 'paths:' en el disparador a proposito. Con 'paths:',
@@ -39,19 +42,25 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      backend: ${{ steps.filtro.outputs.backend }}
-      frontend: ${{ steps.filtro.outputs.frontend }}
+      backend: ${{ steps.filtro.outputs.backend == 'true' || steps.filtro.outputs.flujo == 'true' }}
+      frontend: ${{ steps.filtro.outputs.frontend == 'true' || steps.filtro.outputs.flujo == 'true' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3
         id: filtro
         with:
+          # 'every': un archivo cuenta solo si cumple TODOS los patrones del
+          # filtro. Asi un cambio que solo toca Markdown (AGENTS.md, skills,
+          # documentacion) no compila ni prueba nada.
+          predicate-quantifier: every
           filters: |
             backend:
               - 'backend/**'
-              - '.github/workflows/ci.yml'
+              - '!**/*.md'
             frontend:
               - 'frontend/**'
+              - '!**/*.md'
+            flujo:
               - '.github/workflows/ci.yml'
 
   backend:
@@ -63,10 +72,10 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       # La misma distribucion y version que backend/Dockerfile.
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: '21'
@@ -79,7 +88,7 @@ jobs:
 
       - name: Guardar los reportes de las pruebas
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: reportes-surefire
           path: backend/**/target/surefire-reports/
@@ -96,10 +105,10 @@ jobs:
     env:
       NEXT_TELEMETRY_DISABLED: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       # La misma version que frontend/Dockerfile.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
           cache: npm
