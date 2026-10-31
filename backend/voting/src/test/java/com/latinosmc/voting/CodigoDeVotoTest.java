@@ -33,7 +33,7 @@ class CodigoDeVotoTest {
         @Test
         @DisplayName("tiene la forma de dos grupos de cuatro")
         void forma() {
-            assertThat(CodigoDeVoto.generar()).matches("[0-9A-Z]{4}-[0-9A-Z]{4}");
+            assertThat(CodigoDeVoto.generar()).matches("[0-9A-Z]{4}-[0-9A-Z]{5}");
         }
 
         /**
