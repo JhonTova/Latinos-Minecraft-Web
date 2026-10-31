@@ -95,6 +95,18 @@ cd frontend && npm run lint && npm run build
 Incluye **tests de arquitectura** que fallan si un módulo cruza una frontera que
 no debe. Sin ellos, las reglas se erosionan solas.
 
+**Integración continua.** [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+ejecuta lo mismo en cada pull request hacia `main` y en cada push a `main`:
+`mvn -B verify` en el backend y `npm ci`, `npm run lint` y `npm run build` en el
+frontend. Son trabajos separados que corren en paralelo, y cada uno solo se
+ejecuta si cambió código de su carpeta (los cambios solo de Markdown no
+cuentan). Si falla el backend, los reportes de las pruebas
+quedan como artefacto de la ejecución durante 7 días.
+
+Para que un PR roto no se pueda fusionar, marca los checks `backend` y
+`frontend` como obligatorios en la protección de `main`
+(*Settings → Branches*).
+
 ---
 
 ## El plugin
