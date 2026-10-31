@@ -1,0 +1,125 @@
+# =============================================================================
+# Integracion continua
+# =============================================================================
+#
+# scripts/actualizar.sh despliega lo que haya en main. Este flujo es lo que
+# impide que llegue a main un cambio que no compila o rompe una prueba: ejecuta
+# lo mismo que se pide en AGENTS.md antes de dar un cambio por terminado.
+#
+# No usa secretos, asi que corre igual en cualquier pull request. Las acciones
+# van fijadas por SHA (con la version en un comentario): una etiqueta como @v4
+# la puede mover su autor, un SHA no.
+# =============================================================================
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# En un PR, un push nuevo deja obsoleta la ejecucion anterior y se cancela. En
+# main no: cada commit que llega a produccion tiene que quedar con su resultado.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Se decide aqui y no con 'paths:' en el disparador a proposito. Con 'paths:',
+  # un PR que solo toca documentacion no ejecuta el flujo, y si los checks se
+  # marcan como obligatorios en la proteccion de main, ese PR se queda esperando
+  # un check que nunca llega. Un trabajo omitido, en cambio, cuenta como aprobado.
+  cambios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # En un PR, paths-filter pide la lista de archivos a la API de GitHub, y eso
+    # exige leer pull requests. Solo este trabajo lo necesita.
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filtro.outputs.backend == 'true' || steps.filtro.outputs.flujo == 'true' }}
+      frontend: ${{ steps.filtro.outputs.frontend == 'true' || steps.filtro.outputs.flujo == 'true' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3
+        id: filtro
+        with:
+          # 'every': un archivo cuenta solo si cumple TODOS los patrones del
+          # filtro. Asi un cambio que solo toca Markdown (AGENTS.md, skills,
+          # documentacion) no compila ni prueba nada.
+          predicate-quantifier: every
+          filters: |
+            backend:
+              - 'backend/**'
+              - '!**/*.md'
+            frontend:
+              - 'frontend/**'
+              - '!**/*.md'
+            flujo:
+              - '.github/workflows/ci.yml'
+
+  backend:
+    needs: cambios
+    if: needs.cambios.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # La misma distribucion y version que backend/Dockerfile.
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # No se ejecuta spotless:check: el codigo actual no lo pasa
+      # (ver backend/AGENTS.md) y pondria la CI en rojo desde el primer dia.
+      - name: Compilar y probar
+        run: mvn -B -ntp verify
+
+      - name: Guardar los reportes de las pruebas
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: reportes-surefire
+          path: backend/**/target/surefire-reports/
+          retention-days: 7
+
+  frontend:
+    needs: cambios
+    if: needs.cambios.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # La misma version que frontend/Dockerfile.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Revisar con ESLint
+        run: npm run lint
+
+      # Tambien revisa los tipos de TypeScript.
+      - name: Compilar
+        run: npm run build
