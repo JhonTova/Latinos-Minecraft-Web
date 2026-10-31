@@ -1,0 +1,111 @@
+# =============================================================================
+# Integracion continua
+# =============================================================================
+#
+# scripts/actualizar.sh despliega lo que haya en main. Este flujo es lo que
+# impide que llegue a main un cambio que no compila o rompe una prueba: ejecuta
+# lo mismo que se pide en AGENTS.md antes de dar un cambio por terminado.
+#
+# No usa secretos, asi que corre igual en cualquier pull request.
+# =============================================================================
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Un push nuevo a la misma rama deja obsoleta la ejecucion anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Se decide aqui y no con 'paths:' en el disparador a proposito. Con 'paths:',
+  # un PR que solo toca documentacion no ejecuta el flujo, y si los checks se
+  # marcan como obligatorios en la proteccion de main, ese PR se queda esperando
+  # un check que nunca llega. Un trabajo omitido, en cambio, cuenta como aprobado.
+  cambios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      backend: ${{ steps.filtro.outputs.backend }}
+      frontend: ${{ steps.filtro.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filtro
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/ci.yml'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/ci.yml'
+
+  backend:
+    needs: cambios
+    if: needs.cambios.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      # La misma distribucion y version que backend/Dockerfile.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # No se ejecuta spotless:check: el codigo actual no lo pasa
+      # (ver backend/AGENTS.md) y pondria la CI en rojo desde el primer dia.
+      - name: Compilar y probar
+        run: mvn -B -ntp verify
+
+      - name: Guardar los reportes de las pruebas
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-surefire
+          path: backend/**/target/surefire-reports/
+          retention-days: 7
+
+  frontend:
+    needs: cambios
+    if: needs.cambios.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+
+      # La misma version que frontend/Dockerfile.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Revisar con ESLint
+        run: npm run lint
+
+      # Tambien revisa los tipos de TypeScript.
+      - name: Compilar
+        run: npm run build
