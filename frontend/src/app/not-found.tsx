@@ -5,6 +5,10 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Página no encontrada",
+  // Next ya añade un `noindex`, pero el layout declara `index, follow` para todo
+  // el sitio y la página salía con las dos etiquetas, contradiciéndose. Esta
+  // sustituye a la del layout y deja una sola.
+  robots: { index: false, follow: true },
 };
 
 /**
