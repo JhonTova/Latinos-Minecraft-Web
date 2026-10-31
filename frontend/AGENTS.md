@@ -66,6 +66,14 @@ el navegador, en tema claro y oscuro y en ancho de móvil.
 - Lo patrocinado se pinta en un bloque aparte, etiquetado y visualmente
   distinto del ranking orgánico.
 
+## Skills de esta carpeta
+
+- `vercel-react-best-practices` (en `.claude/skills/`): reglas de rendimiento de
+  React y Next.js de Vercel. Es genérica, así que **si choca con este archivo o
+  con la guía de `node_modules/next/dist/docs/`, mandan estos**. En particular,
+  sus reglas recomiendan librerías como `better-all`, `swr` o `lru-cache`: no
+  las instales sin pedirlo (ver abajo).
+
 ## Lo que no debes hacer aquí
 
 - No agregues dependencias sin pedirlo; el proyecto usa solo Next, React y

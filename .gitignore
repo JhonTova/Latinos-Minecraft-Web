@@ -60,7 +60,12 @@ Thumbs.db
 # repositorio se comportaba distinto segun la maquina.
 CLAUDE.md
 DESPLIEGUE.md
-.claude/
+# De .claude/ solo se versionan las skills del equipo; los ajustes y permisos
+# (settings.local.json, etc.) siguen siendo de cada desarrollador. Se usa
+# '.claude/*' y no '.claude/' porque git no puede reincluir un archivo si la
+# carpeta que lo contiene entera esta excluida.
+**/.claude/*
+!**/.claude/skills/
 
 # Notas de trabajo personales de cada desarrollador.
 *.local.md
