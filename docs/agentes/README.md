@@ -33,14 +33,19 @@ Es un sistema único para el monorepo, con agentes limitados a `backend/**` o a
 
 ## Qué incorporaría este diseño
 
-Hoy el repositorio tiene la CI (`mvn -B verify` y, en el frontend, `lint` y
-`build`) y Claude Code Review en cada PR. Este diseño agrega:
+Hoy el repositorio ya tiene:
+
+- la CI: `mvn -B verify` en el backend, y `lint` y `build` en el frontend;
+- Claude Code Review en cada PR;
+- desde el 09/11/2026, el ruleset **`proteger-main`**. Exige PR (nadie hace
+  push directo a `main`) y que pasen los checks `cambios`, `backend` y
+  `frontend`. También bloquea el borrado y el force push de `main`, y no tiene
+  excepciones.
+
+Este diseño agrega:
 
 - los hooks de permisos de cada agente;
 - Vitest en el frontend (es una dependencia nueva, así que pasa por un ADR);
 - PIT y JaCoCo en el backend;
-- un job de CI que falla si se edita una migración ya aplicada;
-- el ruleset `proteger-main`.
-
-Hoy `main` **no** está protegida: mientras no se active el ruleset, la CI
-informa pero no impide fusionar.
+- un job de CI que falla si se edita una migración ya aplicada. Se agregará a
+  los checks obligatorios del ruleset.
