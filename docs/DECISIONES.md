@@ -45,6 +45,7 @@ contradicciones (documentadas abajo). Este archivo es lo que manda.
 | [0028](decisiones/0028-suspension-y-purga.md) | Suspensión, purga por inactividad y limpieza de archivos | ✅ Vigente |
 | [0029](decisiones/0029-decisiones-de-marca-identidad-y-alcance.md) | Se aceptan offline y premium; marca LatinosMC; es el sitio de votación | ✅ Vigente |
 | [0030](decisiones/0030-dos-rankings-y-filtros-de-acceso.md) | Dos rankings separados, Bedrock como filtro | ✅ Vigente |
+| [0031](decisiones/0031-vitest-en-el-frontend.md) | Vitest para la lógica del frontend y el puente | ✅ Vigente |
 
 ---
 
