@@ -9,10 +9,10 @@ rojo va antes que el código.
 - [x] T2 · `pruebas-frontend` · `src/lib/espera.test.ts` con CA-1 a CA-6 en rojo — se comprueba con `npm run test` fallando porque `./espera` no existe (P-6), con el motivo copiado
 - [x] T3 · `pruebas-frontend` · `src/lib/rechazo-de-voto.test.ts` con la parte lógica de CA-7, CA-9, CA-10 y CA-11 en rojo — se comprueba con `npm run test` fallando porque `./rechazo-de-voto` no existe
 - [x] T4 · `orquestador` · Commit `test(frontend): ...` con T2 y T3
-- [ ] T5 · `dev-frontend` · `src/lib/espera.ts` y `src/lib/rechazo-de-voto.ts` que ponen en verde T2 y T3 — se comprueba con `npm run test`
-- [ ] T6 · `dev-frontend` · `boton-votar.tsx` usa el clasificador, añade el aviso de voto diario con `role="status"` y quita el `formatearEspera` local y el `?? 0` — se comprueba con `npm run lint`, `npm run test` y `npm run build`
-- [ ] T7 · `verificador-ui` · CA-7 a CA-11 en `/votar/[token]`, móvil y escritorio, claro y oscuro, consola limpia, y el voto correcto (200) sin cambios — se comprueba con su informe y capturas
-- [ ] T8 · `orquestador` · Commit `feat(frontend): ...` con T5 y T6
+- [x] T5 · `dev-frontend` · `src/lib/espera.ts` y `src/lib/rechazo-de-voto.ts` que ponen en verde T2 y T3 — se comprueba con `npm run test`
+- [x] T6 · `dev-frontend` · `boton-votar.tsx` usa el clasificador, añade el aviso de voto diario con `role="status"` y quita el `formatearEspera` local y el `?? 0` — se comprueba con `npm run lint`, `npm run test` y `npm run build`
+- [ ] T7 · `verificador-ui` · CA-7 a CA-11 en `/votar/[token]`, móvil y escritorio, claro y oscuro, consola limpia, y el voto correcto (200) sin cambios — se comprueba con su informe y capturas. **Pendiente:** el `verificador-ui` no pudo abrir la pantalla (ver «Evidencia» y «Observaciones»); solo revisó el código
+- [x] T8 · `orquestador` · Commit `feat(frontend): ...` con T5 y T6
 - [ ] T9 · `revisor` · Revisión del diff de la rama, incluido CA-12 (`git diff --stat`) — sin hallazgos altos abiertos
 - [ ] T10 · `orquestador` · Evidencia, «Qué hubo que corregirle a la IA» y `pr.md` con la matriz
 
@@ -23,8 +23,8 @@ Salida real de los comandos, pegada al cerrar la spec.
 | Qué | Comando | Resultado |
 |---|---|---|
 | Rojo | `cd frontend && npm run test` (`pruebas-frontend`, 2.ª vuelta) | `FAIL src/lib/espera.test.ts` — `Error: Cannot find module './espera' imported from …/frontend/src/lib/espera.test.ts`; `FAIL src/lib/rechazo-de-voto.test.ts` — `Error: Cannot find module './rechazo-de-voto' imported from …/frontend/src/lib/rechazo-de-voto.test.ts`. `Test Files 2 failed \| 1 passed (3)`, `Tests 57 passed (57)` (las 57 son de `puente.test.ts`; los archivos nuevos no llegan a ejecutar pruebas). Rojo por módulo inexistente, aceptado en P-6 |
-| Verde | | |
-| Visual | | |
+| Verde | `cd frontend && npm run lint` · `npm run test` · `npm run build` (`dev-frontend`, 1.ª vuelta) | lint sin errores ni avisos; Vitest 5.1.0: 3 archivos, 110 pruebas, todas pasan (aviso previo sobre `vitest.config.ts` cargado como CommonJS); `next build` 16.3.1 (Turbopack) compila, TypeScript pasa, 15 páginas estáticas. El build no reescribió `frontend/AGENTS.md` ni `next-env.d.ts` |
+| Visual | `cd frontend && npm run dev` (`verificador-ui`) | **No se pudo ver la pantalla.** `npm run dev` arrancó (`Ready in 376ms`), pero el rol no tiene herramientas de navegador y el hook le bloqueó `cat`, `cd .`, `sleep` e `Invoke-WebRequest`. Además, `votar/[token]/page.tsx` llama a `resolverEnlaceDeVoto(token)` en el servidor antes de pintar `BotonVotar`, y sin backend esa llamada falla, así que interceptar `/api/votar/*` en el navegador tampoco bastaría. Solo revisó el código: textos, `role="status"`, ausencia de `text-danger` y botón oculto coinciden con CA-7 a CA-11. Sin capturas, consola, contraste ni anchos |
 | Revisión | | |
 
 ## Qué hubo que corregirle a la IA
