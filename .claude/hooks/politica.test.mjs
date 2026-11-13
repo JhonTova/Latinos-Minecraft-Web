@@ -203,48 +203,71 @@ describe("puedeEjecutar", () => {
   });
 });
 
-describe("los hooks, ejecutados como los llama Claude Code", () => {
-  function hook(script, rol, llamada) {
-    return spawnSync(process.execPath, [path.join(AQUI, script), rol], {
-      input: typeof llamada === "string" ? llamada : JSON.stringify(llamada),
-      encoding: "utf8",
-    });
+describe("el hook, ejecutado como lo llama Claude Code", () => {
+  // Claude Code manda el rol en `agent_type`: lo trae la llamada de un subagente
+  // y la de una sesión arrancada con `--agent`.
+  function hook(rol, llamada) {
+    const entrada = typeof llamada === "string" ? llamada : JSON.stringify(rol ? { agent_type: rol, ...llamada } : llamada);
+    return spawnSync(process.execPath, [path.join(AQUI, "aplicar-politica.mjs")], { input: entrada, encoding: "utf8" });
   }
 
-  it("limitar-rutas deja pasar con 0 y bloquea con 2 y un motivo", () => {
-    const dentro = path.join(RAIZ, "backend", "voting", "src", "test", "java", "XTest.java");
-    const fuera = path.join(RAIZ, "backend", "voting", "src", "main", "java", "X.java");
-    assert.equal(hook("limitar-rutas.mjs", "pruebas-backend", { tool_name: "Write", tool_input: { file_path: dentro } }).status, 0);
-    const r = hook("limitar-rutas.mjs", "pruebas-backend", { tool_name: "Edit", tool_input: { file_path: fuera } });
+  const dentro = path.join(RAIZ, "backend", "voting", "src", "test", "java", "XTest.java");
+  const fuera = path.join(RAIZ, "backend", "voting", "src", "main", "java", "X.java");
+
+  it("deja editar dentro de la carpeta del rol y bloquea fuera, con el motivo", () => {
+    assert.equal(hook("pruebas-backend", { tool_name: "Write", tool_input: { file_path: dentro } }).status, 0);
+    const r = hook("pruebas-backend", { tool_name: "Edit", tool_input: { file_path: fuera } });
     assert.equal(r.status, 2);
     assert.match(r.stderr, /fuera de las carpetas del rol/);
   });
 
-  it("limitar-rutas bloquea una ruta fuera del repositorio", () => {
-    const r = hook("limitar-rutas.mjs", "dev-backend", {
+  it("bloquea una ruta fuera del repositorio", () => {
+    const r = hook("dev-backend", {
       tool_name: "Write",
       tool_input: { file_path: path.join(RAIZ, "..", "x", "backend", "a", "src", "main", "X.java") },
     });
     assert.equal(r.status, 2);
   });
 
-  it("limitar-rutas bloquea editar una migración que ya está en main", () => {
+  it("bloquea editar una migración que ya está en main", () => {
     const v1 = path.join(RAIZ, "backend", "app", "src", "main", "resources", "db", "migration", "V1__base.sql");
-    const r = hook("limitar-rutas.mjs", "dev-backend", { tool_name: "Edit", tool_input: { file_path: v1 } });
+    const r = hook("dev-backend", { tool_name: "Edit", tool_input: { file_path: v1 } });
     assert.equal(r.status, 2);
     assert.match(r.stderr, /migración aplicada no se edita/);
   });
 
-  it("limitar-bash deja pasar con 0 y bloquea con 2", () => {
-    assert.equal(hook("limitar-bash.mjs", "dev-backend", { tool_name: "Bash", tool_input: { command: "mvn -B verify" } }).status, 0);
-    const r = hook("limitar-bash.mjs", "dev-backend", { tool_name: "Bash", tool_input: { command: "git push origin main" } });
+  it("deja ejecutar los comandos del rol y bloquea los demás", () => {
+    assert.equal(hook("dev-backend", { tool_name: "Bash", tool_input: { command: "mvn -B verify" } }).status, 0);
+    const r = hook("dev-backend", { tool_name: "Bash", tool_input: { command: "git push origin main" } });
     assert.equal(r.status, 2);
     assert.match(r.stderr, /no puede ejecutar/);
+    assert.equal(hook("pruebas-backend", { tool_name: "PowerShell", tool_input: { command: "node --version" } }).status, 2);
   });
 
-  it("si el hook no entiende la entrada, bloquea en vez de dejar pasar", () => {
-    assert.equal(hook("limitar-bash.mjs", "dev-backend", "esto no es json").status, 2);
-    assert.equal(hook("limitar-rutas.mjs", "dev-backend", { tool_name: "Write", tool_input: {} }).status, 2);
-    assert.equal(hook("limitar-bash.mjs", "", { tool_name: "Bash", tool_input: { command: "mvn -B verify" } }).status, 2);
+  it("un rol que solo lee no puede editar ni ejecutar nada que no sea suyo", () => {
+    assert.equal(hook("analista", { tool_name: "Write", tool_input: { file_path: dentro } }).status, 2);
+    assert.equal(hook("revisor", { tool_name: "Edit", tool_input: { file_path: fuera } }).status, 2);
+    assert.equal(hook("analista", { tool_name: "Bash", tool_input: { command: "npm ci" } }).status, 2);
+  });
+
+  it("el orquestador, como agente principal, tampoco escribe código", () => {
+    const spec = path.join(RAIZ, "specs", "001-limites", "spec.md");
+    assert.equal(hook("orquestador", { tool_name: "Write", tool_input: { file_path: spec } }).status, 0);
+    assert.equal(hook("orquestador", { tool_name: "Write", tool_input: { file_path: fuera } }).status, 2);
+  });
+
+  it("no restringe una sesión que no es de un rol del proyecto", () => {
+    assert.equal(hook(null, { tool_name: "Write", tool_input: { file_path: fuera } }).status, 0);
+    assert.equal(hook("Explore", { tool_name: "Bash", tool_input: { command: "ls" } }).status, 0);
+  });
+
+  it("no se mete con las herramientas que no editan ni ejecutan", () => {
+    assert.equal(hook("analista", { tool_name: "Read", tool_input: { file_path: fuera } }).status, 0);
+  });
+
+  it("si no entiende la entrada de un rol, bloquea en vez de dejar pasar", () => {
+    assert.equal(hook(null, "esto no es json").status, 2);
+    assert.equal(hook("dev-backend", { tool_name: "Write", tool_input: {} }).status, 2);
+    assert.equal(hook("dev-backend", { tool_name: "Bash", tool_input: {} }).status, 2);
   });
 });

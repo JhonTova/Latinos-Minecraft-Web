@@ -14,5 +14,21 @@
       "Bash(git push -f:*)",
       "Bash(gh pr merge:*)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/aplicar-politica.mjs"
+            ]
+          }
+        ]
+      }
+    ]
   }
 }

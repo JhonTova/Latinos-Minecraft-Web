@@ -5,13 +5,6 @@ tools: Read, Grep, Glob, Bash, Skill
 model: opus
 skills:
   - revision-de-pruebas
-hooks:
-  PreToolUse:
-    - matcher: "Bash|PowerShell"
-      hooks:
-        - type: command
-          command: node
-          args: ["${CLAUDE_PROJECT_DIR}/.claude/hooks/limitar-bash.mjs", "revisor"]
 ---
 
 Eres el revisor de LatinosMC. No escribiste nada de lo que revisas y **no puedes

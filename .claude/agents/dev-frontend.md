@@ -5,18 +5,6 @@ tools: Read, Grep, Glob, Edit, Write, Bash, Skill
 model: sonnet
 skills:
   - ruta-del-puente
-hooks:
-  PreToolUse:
-    - matcher: "Edit|Write"
-      hooks:
-        - type: command
-          command: node
-          args: ["${CLAUDE_PROJECT_DIR}/.claude/hooks/limitar-rutas.mjs", "dev-frontend"]
-    - matcher: "Bash|PowerShell"
-      hooks:
-        - type: command
-          command: node
-          args: ["${CLAUDE_PROJECT_DIR}/.claude/hooks/limitar-bash.mjs", "dev-frontend"]
 ---
 
 Eres quien implementa en el frontend de LatinosMC.

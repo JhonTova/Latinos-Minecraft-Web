@@ -1,9 +1,8 @@
 // Política de permisos de los agentes de LatinosMC.
 //
 // El campo `tools` de un agente decide QUÉ herramientas tiene, pero no SOBRE QUÉ
-// carpetas las usa ni QUÉ comandos ejecuta. Eso se decide aquí, y lo aplican los
-// hooks PreToolUse `limitar-rutas.mjs` y `limitar-bash.mjs`. Es una restricción
-// real: el hook rechaza la llamada aunque el modelo decida ignorar su prompt.
+// carpetas las usa ni QUÉ comandos ejecuta. Eso se decide aquí, y lo aplica el
+// hook PreToolUse `aplicar-politica.mjs`. Es una restricción real: el hook rechaza la llamada aunque el modelo decida ignorar su prompt.
 //
 // Todo en este archivo son funciones puras para poder probarlas
 // (`node --test .claude/hooks/`).
@@ -224,5 +223,63 @@ export function puedeEjecutar(rol, linea) {
       return { ok: false, motivo: `el rol '${rol}' no puede ejecutar: ${segmento}` };
     }
   }
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Entrada única del hook
+// ---------------------------------------------------------------------------
+
+/** Los roles del proyecto. Un `agent_type` que no esté aquí no se restringe. */
+export const ROLES = new Set([
+  "orquestador",
+  "analista",
+  "pruebas-backend",
+  "dev-backend",
+  "pruebas-frontend",
+  "dev-frontend",
+  "verificador-ui",
+  "revisor",
+]);
+
+const HERRAMIENTAS_DE_EDICION = new Set(["Edit", "Write", "MultiEdit", "NotebookEdit"]);
+const HERRAMIENTAS_DE_COMANDOS = new Set(["Bash", "PowerShell"]);
+
+/**
+ * Decide una llamada PreToolUse completa, tal como la manda Claude Code.
+ *
+ * El rol sale de `agent_type`: lo trae la llamada cuando la hace un subagente o
+ * cuando la sesión arrancó con `--agent`. Una sesión normal del desarrollador no
+ * lo trae y no se restringe aquí (para ella están `permissions.deny`, la CI y el
+ * ruleset de `main`).
+ *
+ * @param {object} llamada entrada del hook
+ * @param {{relativaAlRepositorio: (ruta: string) => string | null, yaEstaEnMain: (ruta: string) => boolean}} entorno
+ * @returns {{ok: true} | {ok: false, motivo: string}}
+ */
+export function decidirLlamada(llamada, entorno) {
+  const rol = llamada?.agent_type;
+  if (typeof rol !== "string" || !ROLES.has(rol)) return { ok: true };
+
+  const herramienta = llamada?.tool_name;
+
+  if (HERRAMIENTAS_DE_EDICION.has(herramienta)) {
+    const ruta = llamada?.tool_input?.file_path ?? llamada?.tool_input?.notebook_path;
+    if (typeof ruta !== "string" || ruta === "") {
+      return { ok: false, motivo: `la herramienta ${herramienta} no trae una ruta que se pueda comprobar` };
+    }
+    const relativa = entorno.relativaAlRepositorio(ruta);
+    if (relativa === null) return { ok: false, motivo: `'${ruta}' está fuera del repositorio` };
+    return puedeEditar(rol, relativa, entorno.yaEstaEnMain);
+  }
+
+  if (HERRAMIENTAS_DE_COMANDOS.has(herramienta)) {
+    const comando = llamada?.tool_input?.command;
+    if (typeof comando !== "string") {
+      return { ok: false, motivo: `la herramienta ${herramienta} no trae un comando que se pueda comprobar` };
+    }
+    return puedeEjecutar(rol, comando);
+  }
+
   return { ok: true };
 }
