@@ -118,6 +118,8 @@ del equipo y cambia por pull request, igual que el código:
 | Reglas | `.claude/rules/*.md` | `git-y-pull-requests.md` siempre; las demás, al leer o editar un archivo que cumple su `paths:` |
 | Skills | `.claude/skills/` (`spec-sdd`, `adr-nuevo`, `revision-de-pruebas`), `backend/.claude/skills/` (`migracion-flyway`) y `frontend/.claude/skills/` (`ruta-del-puente`, `vercel-react-best-practices`) | Solo cuando la tarea las necesita; las de `backend/` y `frontend/`, al tocar esa carpeta |
 | Specs | `specs/NNN-nombre/` con `spec.md`, `plan.md` y `tareas.md` | Las crea y las explica la skill `spec-sdd` |
+| Agentes | `.claude/agents/` (ocho; ver `docs/agentes/README.md`) | Con `claude --agent orquestador` desde la raíz |
+| Hooks de permisos | `.claude/hooks/` | En cada `Edit`, `Write` y comando de un agente |
 | Ajustes compartidos | `.claude/settings.json` | Siempre: niega leer `.env` y editar la configuración de producción |
 
 Claude Code lee `AGENTS.md` directamente mientras no exista un `CLAUDE.md`. Si
@@ -127,6 +129,11 @@ memoria deja de cargarse.
 Una regla va en `.claude/rules/` cuando es corta y debe cumplirse cada vez que
 se toca un tipo de archivo. Lo que describe el proyecto va en un `AGENTS.md`.
 Un procedimiento de varios pasos que solo hace falta a veces va en una skill.
+
+Si eres un subagente, tu rol solo puede editar ciertas carpetas y ejecutar
+ciertos comandos; un hook rechaza lo demás. Si un hook te bloquea, no busques
+otro camino: di en tu informe qué necesitabas. Si cambias
+`.claude/hooks/politica.mjs`, ejecuta `node --test .claude/hooks/`.
 
 Una funcionalidad nueva se desarrolla con SDD: primero su spec en `specs/`,
 luego el plan, luego las tareas y al final el código (ver `specs/README.md`).
