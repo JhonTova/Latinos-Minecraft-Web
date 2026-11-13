@@ -1,6 +1,6 @@
 # Spec 002 — Decir cuánto falta cuando el voto del día ya se usó
 
-- **Estado:** Aprobada (13/11/2026, con los ajustes de las respuestas P-1 a P-6 del plan)
+- **Estado:** Implementada, pendiente de la verificación visual y de la fusión (aprobada el 13/11/2026, con los ajustes de las respuestas P-1 a P-6 del plan)
 - **Rama:** `feat/002-espera-voto-diario`
 - **Parte:** frontend
 - **Riesgo:** 🟢 ligero (interfaz y textos; no toca el motor de votos ni el antifraude)
@@ -99,4 +99,10 @@ se reescribieron con esa regla antes de aprobar la spec).
 
 ## Cambios durante la implementación
 
-Vacío mientras lo implementado coincida con lo especificado.
+- **`role="status"` también en «Ya votaste hace poco».** CA-8 solo lo pide
+  para el aviso del voto diario, pero el orquestador se lo encargó a
+  `dev-frontend` también para el bloque de la espera por servidor, para que los
+  dos avisos se anuncien igual a los lectores de pantalla. No estaba en la spec
+  ni en el plan; lo detectó el `revisor` (hallazgo bajo). No cambia ningún
+  texto ni ningún otro criterio. Queda pendiente que el desarrollador confirme
+  si lo conserva.
