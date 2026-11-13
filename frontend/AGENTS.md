@@ -74,6 +74,9 @@ La prueba de `src/lib/algo.ts` es `src/lib/algo.test.ts`, en la misma carpeta.
 
 ## Skills de esta carpeta
 
+- `ruta-del-puente` (en `.claude/skills/`): propia del proyecto. Cómo abrir una
+  ruta del backend al navegador en la lista blanca del puente, con la prueba
+  primero.
 - `vercel-react-best-practices` (en `.claude/skills/`): reglas de rendimiento de
   React y Next.js de Vercel. Es genérica, así que **si choca con este archivo o
   con la guía de `node_modules/next/dist/docs/`, mandan estos**. En particular,

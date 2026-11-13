@@ -19,7 +19,9 @@ hay en `main`, así que estas normas son las que protegen producción.
   commits que ya están en GitHub.
 - **No uses `--no-verify`** ni desactives un check para que algo pase. Si un
   check falla, se arregla la causa.
-- La descripción del pull request incluye: qué cambia y por qué, la matriz
-  criterio → prueba cuando hay criterios de aceptación y la evidencia
+- **Una funcionalidad nueva empieza por su spec** (`specs/NNN-.../`, skill
+  `spec-sdd`): una spec, una rama, un pull request.
+- La descripción del pull request incluye: qué cambia y por qué, la spec si la
+  hay, la matriz criterio → prueba y la evidencia
   (salida de `mvn`, `npm`, capturas). Si toca `/api/v1/plugin/*`, una migración,
   el ledger o agrega una dependencia, se dice en la primera línea.
