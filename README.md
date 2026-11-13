@@ -47,7 +47,7 @@ LatinosMC/
 ├── docs/
 │   ├── DECISIONES.md      ← decisiones vigentes consolidadas
 │   ├── POSICIONAMIENTO.md ← cómo salir en Google
-│   ├── decisiones/        ← 31 ADRs
+│   ├── decisiones/        ← 32 ADRs
 │   └── requisitos/        ← los 19 documentos de entrada
 ├── scripts/               ← actualizar.sh, comprobar.sh
 ├── backend/               ← Java 21 + Spring Boot (Maven multi-módulo)

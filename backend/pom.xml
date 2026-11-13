@@ -52,6 +52,28 @@
     <archunit.version>1.3.0</archunit.version>
     <uuid-creator.version>6.0.0</uuid-creator.version>
     <spotless.version>2.44.0</spotless.version>
+    <jacoco.version>0.8.16</jacoco.version>
+    <pitest.version>1.30.2</pitest.version>
+    <pitest-junit5.version>1.2.3</pitest-junit5.version>
+
+    <!--
+      JaCoCo escribe aqui su agente. Se declara vacia para que surefire arranque
+      igual cuando JaCoCo no corre (por ejemplo con -Djacoco.skip=true).
+    -->
+    <argLine/>
+
+    <!--
+      Suelo de cobertura de lineas del modulo. En cero, JaCoCo solo informa.
+      Los modulos criticos (identity, voting, trust, billing) lo suben en su
+      propio pom.xml: ahi el suelo si hace fallar 'mvn verify'.
+    -->
+    <cobertura.suelo>0.00</cobertura.suelo>
+
+    <!--
+      PIT solo muta los modulos criticos: cada uno pone esta propiedad en false.
+      Mutar los diez modulos tardaria demasiado para lo que aporta.
+    -->
+    <mutacion.omitir>true</mutacion.omitir>
   </properties>
 
   <dependencyManagement>
@@ -150,7 +172,43 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
-            <argLine>-javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
+            <!-- @{argLine} se resuelve al ejecutar: es el agente de JaCoCo. -->
+            <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.pitest</groupId>
+          <artifactId>pitest-maven</artifactId>
+          <version>${pitest.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.pitest</groupId>
+              <artifactId>pitest-junit5-plugin</artifactId>
+              <version>${pitest-junit5.version}</version>
+            </dependency>
+          </dependencies>
+          <configuration>
+            <skip>${mutacion.omitir}</skip>
+            <targetClasses>
+              <param>com.latinosmc.${project.artifactId}.*</param>
+            </targetClasses>
+            <targetTests>
+              <param>com.latinosmc.${project.artifactId}.*</param>
+            </targetTests>
+            <outputFormats>
+              <param>HTML</param>
+              <param>XML</param>
+            </outputFormats>
+            <!-- Sin fecha en la carpeta: el informe queda siempre en target/pit-reports. -->
+            <timestampedReports>false</timestampedReports>
+            <threads>4</threads>
           </configuration>
         </plugin>
 
@@ -194,6 +252,83 @@
           </execution>
         </executions>
       </plugin>
+
+      <!--
+        Cobertura (ADR-0032). Mide todos los modulos y deja el informe en
+        target/site/jacoco. El suelo solo falla donde 'cobertura.suelo' es mayor
+        que cero. La cobertura dice que lineas se ejecutaron, no que las pruebas
+        comprueben algo: eso lo mide la mutacion (perfil 'mutacion').
+      -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>agente</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>informe</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>suelo</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>LINE</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>${cobertura.suelo}</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <!--
+      Pruebas de mutacion con PIT (ADR-0032). No corre en 'mvn verify' normal:
+        mvn -B -Pmutacion -pl voting -am verify
+      PIT cambia el codigo (invierte una condicion, quita una llamada) y vuelve a
+      ejecutar las pruebas. Un mutante que sobrevive es un cambio de comportamiento
+      que ninguna prueba nota. El informe queda en <modulo>/target/pit-reports.
+    -->
+    <profile>
+      <id>mutacion</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <executions>
+              <execution>
+                <id>mutacion</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>mutationCoverage</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

@@ -166,6 +166,7 @@ describe("puedeEjecutar", () => {
     si(puedeEjecutar("revisor", "git diff main...HEAD"));
     si(puedeEjecutar("revisor", "git log --oneline main..HEAD"));
     si(puedeEjecutar("revisor", "mvn -B -pl voting -am -P mutacion org.pitest:pitest-maven:mutationCoverage"));
+    si(puedeEjecutar("revisor", "mvn -B -P mutacion -pl voting -am verify"));
     si(puedeEjecutar("revisor", "npm run lint"));
     no(puedeEjecutar("revisor", "git commit -m x"));
     no(puedeEjecutar("revisor", "git checkout -- ."));
