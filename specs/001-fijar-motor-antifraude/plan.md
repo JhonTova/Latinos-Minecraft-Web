@@ -82,7 +82,7 @@ Todas en `RuleBasedTrustEngineLimitesTest` salvo las tres últimas filas.
 | CA-3 | `#lasIdentidadesPorIpAportanSuCifraExacta` (N = 3 → sin señal; 4 → 15; 5 → 30; 6 → 45; 7 → 45; 30 → 45) | unitaria parametrizada | L62 límite, L63 resta→suma |
 | CA-4 | `#losVotosEnUnaHoraAportanSuCifraExacta` (V = 6 → sin señal; 7 → 10; 10 → 40; 11 → 40; 50 → 40) | unitaria parametrizada | L70 límite, L71 resta→suma, L71 mult→div, L72 suma→resta |
 | CA-5 | `#elHistorialAportaSuCifraExacta` (H = 0 → `IDENTITY_NEW` +10, riesgo 35; 1 y 9 → sin señal, riesgo 25; 10 y 50 → `IDENTITY_TRUSTED` −15, riesgo 10) | unitaria parametrizada | L82 incremento, L84 límite, L84 negación |
-| CA-6 | `#elRiesgoEsLaSumaExactaDeLasAportaciones` (offline + 4 identidades + 7 votos + H = 0 = 60; el riesgo es igual a la suma de los `delta`) | unitaria | L64 y L72 (suma→resta) |
+| CA-6 | `#elRiesgoEsLaSumaExactaDeLasAportaciones` (offline + 4 identidades + 7 votos + H = 0 = 60; el riesgo es igual a la suma de los `delta`) | unitaria | L72 (suma→resta), también cubierto por CA-4 |
 | CA-7 | `#unaSumaNegativaSeRecortaACero` y `#unaSumaMayorDeCienSeRecortaACien` | unitaria | (fija `Math.clamp`, que DEFAULTS no muta) |
 | CA-8 | `#unRiesgoDe55SeAceptaSinMotivo` y `#unRiesgoDeExactamente60SeRechazaConSusSenales` | unitaria | L91 límite |
 | CA-9 | `#consultaConLasVentanasYLosHashesDeLaPeticion` (tres casos: cada consulta solo dispara su regla si recibe sus argumentos exactos) | unitaria | — (DEFAULTS no muta esos argumentos; es garantía de comportamiento) |

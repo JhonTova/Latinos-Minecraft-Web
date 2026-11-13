@@ -1,6 +1,6 @@
 # Spec 001 — Fijar el comportamiento del motor antifraude
 
-- **Estado:** Aprobada (13/11/2026; P-1 a P-4 quedan abiertas como decisiones de producto)
+- **Estado:** Implementada, pendiente de fusión (aprobada el 13/11/2026; P-1 a P-8 quedan abiertas como decisiones de producto)
 - **Rama:** `feat/001-fijar-motor-antifraude`
 - **Parte:** backend
 - **Riesgo:** 🔴 crítico (módulo `trust`, ver `backend/AGENTS.md`)
