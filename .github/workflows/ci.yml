@@ -120,6 +120,10 @@ jobs:
       - name: Revisar con ESLint
         run: npm run lint
 
+      # Logica sin interfaz y la lista blanca del puente (ADR-0031).
+      - name: Probar con Vitest
+        run: npm run test
+
       # Tambien revisa los tipos de TypeScript.
       - name: Compilar
         run: npm run build

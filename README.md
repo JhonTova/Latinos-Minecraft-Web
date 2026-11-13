@@ -47,7 +47,7 @@ LatinosMC/
 ├── docs/
 │   ├── DECISIONES.md      ← decisiones vigentes consolidadas
 │   ├── POSICIONAMIENTO.md ← cómo salir en Google
-│   ├── decisiones/        ← 30 ADRs
+│   ├── decisiones/        ← 31 ADRs
 │   └── requisitos/        ← los 19 documentos de entrada
 ├── scripts/               ← actualizar.sh, comprobar.sh
 ├── backend/               ← Java 21 + Spring Boot (Maven multi-módulo)
@@ -89,16 +89,20 @@ npm run dev                        # http://localhost:3000
 
 ```bash
 cd backend && mvn verify           # 329 tests
-cd frontend && npm run lint && npm run build
+cd frontend && npm run lint && npm run test && npm run build
 ```
+
+En el frontend, `npm run test` ejecuta Vitest sobre la lógica sin interfaz y
+sobre la lista blanca del puente `/api/backend`
+([ADR-0031](docs/decisiones/0031-vitest-en-el-frontend.md)).
 
 Incluye **tests de arquitectura** que fallan si un módulo cruza una frontera que
 no debe. Sin ellos, las reglas se erosionan solas.
 
 **Integración continua.** [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
 ejecuta lo mismo en cada pull request hacia `main` y en cada push a `main`:
-`mvn -B verify` en el backend y `npm ci`, `npm run lint` y `npm run build` en el
-frontend. Son trabajos separados que corren en paralelo, y cada uno solo se
+`mvn -B verify` en el backend y `npm ci`, `npm run lint`, `npm run test` y
+`npm run build` en el frontend. Son trabajos separados que corren en paralelo, y cada uno solo se
 ejecuta si cambió código de su carpeta (los cambios solo de Markdown no
 cuentan). Si falla el backend, los reportes de las pruebas
 quedan como artefacto de la ejecución durante 7 días.

@@ -30,8 +30,8 @@ avisa en el PR: hay que actualizar el plugin y publicar una release.
 # Backend: compilar y ejecutar todas las pruebas (incluye las de arquitectura)
 cd backend; mvn -B verify; cd ..
 
-# Frontend: instalar, revisar y compilar
-cd frontend; npm ci; npm run lint; npm run build; cd ..
+# Frontend: instalar, revisar, probar y compilar
+cd frontend; npm ci; npm run lint; npm run test; npm run build; cd ..
 
 # Frontend en desarrollo (http://localhost:3000)
 cd frontend; npm run dev
@@ -41,7 +41,8 @@ docker compose up -d --build
 ```
 
 Un cambio está terminado cuando `mvn -B verify` (si tocaste `backend/`) y
-`npm run lint` + `npm run build` (si tocaste `frontend/`) pasan. Las pruebas del
+`npm run lint` + `npm run test` + `npm run build` (si tocaste `frontend/`)
+pasan. Las pruebas del
 backend no necesitan una base de datos real. La CI
 (`.github/workflows/ci.yml`) ejecuta lo mismo en cada pull request.
 

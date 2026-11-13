@@ -25,12 +25,17 @@ de votación, panel del dueño (`/panel`) y panel de administración
 npm ci             # instalar exactamente lo del package-lock.json
 npm run dev        # desarrollo en http://localhost:3000 (necesita el backend en :8080)
 npm run lint       # ESLint
+npm run test       # Vitest, una pasada: src/**/*.test.ts
 npm run build      # compilación de producción: también revisa los tipos
 ```
 
-No hay pruebas automáticas en el frontend: un cambio se da por bueno cuando
-`npm run lint` y `npm run build` pasan sin errores **y** se revisó la pantalla en
-el navegador, en tema claro y oscuro y en ancho de móvil.
+Las pruebas automáticas (Vitest, ADR-0031) cubren solo la **lógica sin
+interfaz**: `src/lib/**` y el puente. Los componentes no tienen pruebas. Por eso
+un cambio se da por bueno cuando `npm run lint`, `npm run test` y
+`npm run build` pasan sin errores **y**, si toca una pantalla, se revisó en el
+navegador, en tema claro y oscuro y en ancho de móvil.
+
+La prueba de `src/lib/algo.ts` es `src/lib/algo.test.ts`, en la misma carpeta.
 
 ## Organización
 
@@ -43,10 +48,11 @@ el navegador, en tema claro y oscuro y en ancho de móvil.
 - `src/lib/`: `api.ts` (llamadas al backend desde el servidor), `tipos.ts`,
   `sesion.ts`, `acciones.ts` (Server Actions) y `categorias.ts`.
 - `src/app/api/backend/[...ruta]/route.ts`: el **único puente** entre el
-  navegador y la API. Tiene una lista blanca de rutas (`RUTAS_PERMITIDAS`); una
-  ruta nueva del backend que se llame desde el navegador hay que agregarla ahí,
-  con la expresión regular más estrecha posible. No la conviertas en un proxy
-  abierto.
+  navegador y la API. Su lista blanca de rutas (`RUTAS_PERMITIDAS`) está en
+  `src/lib/puente.ts`; una ruta nueva del backend que se llame desde el
+  navegador hay que agregarla ahí, con la expresión regular más estrecha
+  posible y con su caso en `src/lib/puente.test.ts`. No la conviertas en un
+  proxy abierto.
 - `src/proxy.ts`: redirección temprana del panel cuando no hay cookie. Es solo
   experiencia de usuario: la autorización real la hace el backend.
 
@@ -77,7 +83,7 @@ el navegador, en tema claro y oscuro y en ancho de móvil.
 ## Lo que no debes hacer aquí
 
 - No agregues dependencias sin pedirlo; el proyecto usa solo Next, React y
-  Tailwind.
+  Tailwind, más Vitest para las pruebas.
 - No llames al backend directamente desde el navegador: pasa por
   `/api/backend/...`.
 - No guardes la sesión ni datos sensibles en `localStorage`.
