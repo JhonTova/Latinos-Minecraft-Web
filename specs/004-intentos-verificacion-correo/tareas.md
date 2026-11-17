@@ -11,8 +11,8 @@ pantalla consume la propiedad nueva.
 - [x] T3 · `pruebas-backend` · `EmailVerificationServiceTransaccionTest` (CA-3), en rojo. Se comprueba con `cd backend && mvn -B -pl identity -am test`: debe fallar porque hoy hay `rollback` y no `commit`.
 - [x] T4 · `orquestador` · Commit `test(identity): ...` con T2 y T3.
 - [ ] T5 · `dev-backend` · `IntentoRechazadoException`, `noRollbackFor` y el manejador en `ManejadorDeErrores` (D1 a D4). Se comprueba con `mvn -B -f backend/pom.xml verify` en verde, incluido `ArquitecturaTest`, y con la cobertura de identity medida.
-- [ ] T6 · `pruebas-frontend` · `intentos-de-verificacion.test.ts` (CA-9 a CA-13), en rojo. Se comprueba con `cd frontend && npm run test`: debe fallar porque el módulo no existe.
-- [ ] T7 · `orquestador` · Commit `test(frontend): ...`.
+- [x] T6 · `pruebas-frontend` · `intentos-de-verificacion.test.ts` (CA-9 a CA-13), en rojo. Se comprueba con `cd frontend && npm run test`: debe fallar porque el módulo no existe.
+- [x] T7 · `orquestador` · Commit `test(frontend): ...`.
 - [ ] T8 · `dev-frontend` · `intentos-de-verificacion.ts` y `formulario-verificar.tsx` (D6, D7). Se comprueba con `npm run lint`, `npm run test` y `npm run build` en verde.
 - [ ] T9 · `verificador-ui` · `/verificar` con 2, 1 y 0 intentos, `too_many_attempts`, error genérico y fallo de red; en móvil y escritorio, con tema claro y oscuro (CA-12, CA-13).
 - [ ] T10 · `orquestador` · Commits `fix(identity): ...` y `feat(frontend): ...`.
