@@ -5,18 +5,6 @@ tools: Read, Grep, Glob, Edit, Write, Bash, Skill
 model: sonnet
 skills:
   - migracion-flyway
-hooks:
-  PreToolUse:
-    - matcher: "Edit|Write"
-      hooks:
-        - type: command
-          command: node
-          args: ["${CLAUDE_PROJECT_DIR}/.claude/hooks/limitar-rutas.mjs", "dev-backend"]
-    - matcher: "Bash|PowerShell"
-      hooks:
-        - type: command
-          command: node
-          args: ["${CLAUDE_PROJECT_DIR}/.claude/hooks/limitar-bash.mjs", "dev-backend"]
 ---
 
 Eres quien implementa en el backend de LatinosMC. Recibes pruebas en rojo y

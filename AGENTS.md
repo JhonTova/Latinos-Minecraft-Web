@@ -119,8 +119,8 @@ del equipo y cambia por pull request, igual que el código:
 | Skills | `.claude/skills/` (`spec-sdd`, `adr-nuevo`, `revision-de-pruebas`), `backend/.claude/skills/` (`migracion-flyway`) y `frontend/.claude/skills/` (`ruta-del-puente`, `vercel-react-best-practices`) | Solo cuando la tarea las necesita; las de `backend/` y `frontend/`, al tocar esa carpeta |
 | Specs | `specs/NNN-nombre/` con `spec.md`, `plan.md` y `tareas.md` | Las crea y las explica la skill `spec-sdd` |
 | Agentes | `.claude/agents/` (ocho; ver `docs/agentes/README.md`) | Con `claude --agent orquestador` desde la raíz |
-| Hooks de permisos | `.claude/hooks/` | En cada `Edit`, `Write` y comando de un agente |
-| Ajustes compartidos | `.claude/settings.json` | Siempre: niega leer `.env` y editar la configuración de producción |
+| Hooks de permisos | `.claude/hooks/`, registrados en `.claude/settings.json` | En cada `Edit`, `Write` y comando; aplican la política del rol que hace la llamada |
+| Ajustes compartidos | `.claude/settings.json` | Siempre: niega leer `.env` y editar la configuración de producción, y registra el hook de permisos |
 
 Claude Code lee `AGENTS.md` directamente mientras no exista un `CLAUDE.md`. Si
 creas un `CLAUDE.md` local, empiézalo con la línea `@AGENTS.md`; sin ella, esta

@@ -8,13 +8,6 @@ mcpServers:
       type: stdio
       command: npx
       args: ["-y", "@playwright/mcp@0.0.85"]
-hooks:
-  PreToolUse:
-    - matcher: "Bash|PowerShell"
-      hooks:
-        - type: command
-          command: node
-          args: ["${CLAUDE_PROJECT_DIR}/.claude/hooks/limitar-bash.mjs", "verificador-ui"]
 ---
 
 Eres el verificador de interfaz de LatinosMC. Compruebas **la pantalla real, no

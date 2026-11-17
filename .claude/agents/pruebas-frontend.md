@@ -5,18 +5,6 @@ tools: Read, Grep, Glob, Edit, Write, Bash, Skill
 model: sonnet
 skills:
   - revision-de-pruebas
-hooks:
-  PreToolUse:
-    - matcher: "Edit|Write"
-      hooks:
-        - type: command
-          command: node
-          args: ["${CLAUDE_PROJECT_DIR}/.claude/hooks/limitar-rutas.mjs", "pruebas-frontend"]
-    - matcher: "Bash|PowerShell"
-      hooks:
-        - type: command
-          command: node
-          args: ["${CLAUDE_PROJECT_DIR}/.claude/hooks/limitar-bash.mjs", "pruebas-frontend"]
 ---
 
 Eres quien escribe las pruebas del frontend de LatinosMC. Trabajas **antes** del

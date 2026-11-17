@@ -16,7 +16,7 @@ Este README describe lo que está **implementado**.
 |---|---|
 | Los ocho agentes | [`.claude/agents/`](../../.claude/agents/) |
 | La política de permisos (qué carpetas y qué comandos tiene cada rol) | [`.claude/hooks/politica.mjs`](../../.claude/hooks/politica.mjs) |
-| Los hooks que la aplican | [`limitar-rutas.mjs`](../../.claude/hooks/limitar-rutas.mjs) y [`limitar-bash.mjs`](../../.claude/hooks/limitar-bash.mjs) |
+| El hook que la aplica | [`aplicar-politica.mjs`](../../.claude/hooks/aplicar-politica.mjs), registrado en [`.claude/settings.json`](../../.claude/settings.json) |
 | Las pruebas de la política | [`politica.test.mjs`](../../.claude/hooks/politica.test.mjs), en la CI (trabajo `arnes`) |
 
 ## Los agentes
@@ -69,10 +69,15 @@ Cada bucle de corrección tiene un máximo de 3 vueltas.
 ## Cómo se hacen cumplir los permisos
 
 El campo `tools` de un agente decide qué herramientas tiene, pero no sobre qué
-carpetas las usa. Eso lo deciden dos hooks `PreToolUse` declarados en el
-frontmatter de cada agente, que leen la llamada y salen con código 2 si no
-cumple la política. Es una restricción, no una instrucción: aunque el modelo
-ignore su prompt, la herramienta no se ejecuta.
+carpetas las usa. Eso lo decide un hook `PreToolUse` registrado en
+`.claude/settings.json`: lee la llamada, mira qué rol la hace (campo
+`agent_type`) y sale con código 2 si no cumple la política de ese rol. Es una
+restricción, no una instrucción: aunque el modelo ignore su prompt, la
+herramienta no se ejecuta.
+
+- El hook corre en toda sesión de Claude Code sobre el repositorio y dentro de
+  los subagentes. Una sesión que no es de uno de los ocho roles no se restringe
+  ahí: para ella están `permissions.deny`, la CI y el ruleset de `main`.
 
 - Si el hook no puede decidir (entrada ilegible, error interno), **bloquea**.
 - Un comando compuesto se parte en segmentos y todos tienen que estar
@@ -95,6 +100,7 @@ se agregan aquí con lo observado.
 | 2 | Los hooks se describían como scripts de shell | Son scripts de Node con una política central y pruebas | El equipo trabaja en Windows y la CI en Linux: Node ya es requisito del frontend y se comporta igual en los dos. Al centralizar la política en un archivo se la pudo probar (26 pruebas). |
 | 3 | `verificador-ui` usaba axe-core | Revisa la accesibilidad con una lista sobre el árbol de accesibilidad que da Playwright | axe-core sería otra dependencia nueva y el servidor MCP de Playwright no lo incluye. Es un control más débil que axe: queda anotado como límite. |
 | 4 | El `revisor` ejecutaba la meta `org.pitest:pitest-maven:mutationCoverage` | Ejecuta `mvn -P mutacion -pl <módulo> -am verify`, solo si el diff toca un módulo crítico | La mutación quedó como un perfil de Maven atado a `verify` (ADR-0032): así el mismo comando sirve al revisor y a la CI, y PIT se salta solo los módulos que no son críticos. |
+| 7 | Los hooks iban en el frontmatter de cada agente | Un solo hook en `.claude/settings.json`, que distingue el rol por `agent_type` | **Observado al usar el sistema (13/11/2026).** Antes de la primera spec se lanzó una sonda: se le pidió al `orquestador` crear `backend/sonda.txt` y ejecutar `node --version`, y lo mismo a `pruebas-backend` como subagente. Las dos cosas debían bloquearse y **ninguna se bloqueó**. Causa: Claude Code solo ejecuta los hooks del frontmatter de un agente del proyecto si la carpeta fue aceptada en el diálogo de confianza, y una sesión `claude -p` no cuenta. Cuando no los ejecuta no avisa, así que el sistema fallaba abierto: sin límites y sin que nadie lo notara. Los hooks de `settings.json` no dependen de eso. Tras el cambio, la misma sonda bloqueó las dos llamadas en los dos casos y dejó pasar la que sí era del rol. |
 | 6 | JaCoCo con un suelo del 80 % de líneas en los módulos críticos | Suelo con trinquete: el de cada módulo crítico es su cobertura medida y solo puede subir | Al medir por primera vez, los módulos críticos estaban entre el 15,5 % (`identity`) y el 57,9 % (`trust`), porque los repositorios JDBC no tienen pruebas (ADR-0021). Un 80 % habría dejado la CI en rojo desde el primer día. Cifras y decisión en ADR-0032. |
 | 5 | La lista `Agent(...)` limitaba a quién llama cada agente | Solo limita al `orquestador`, y solo si corre como agente principal | Es como funciona Claude Code: la lista entre paréntesis se aplica al agente de `--agent`. Los subagentes no tienen la herramienta `Agent`, así que no se llaman entre sí. |
 

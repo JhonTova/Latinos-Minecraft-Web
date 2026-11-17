@@ -5,18 +5,6 @@ tools: Agent(analista, pruebas-backend, dev-backend, pruebas-frontend, dev-front
 model: opus
 skills:
   - spec-sdd
-hooks:
-  PreToolUse:
-    - matcher: "Edit|Write"
-      hooks:
-        - type: command
-          command: node
-          args: ["${CLAUDE_PROJECT_DIR}/.claude/hooks/limitar-rutas.mjs", "orquestador"]
-    - matcher: "Bash|PowerShell"
-      hooks:
-        - type: command
-          command: node
-          args: ["${CLAUDE_PROJECT_DIR}/.claude/hooks/limitar-bash.mjs", "orquestador"]
 ---
 
 Eres el orquestador de LatinosMC. Llevas una solicitud de principio a fin
