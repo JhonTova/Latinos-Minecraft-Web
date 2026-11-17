@@ -14,7 +14,7 @@ Se carga al leer o editar código de `frontend/src/`. Lo general está en
 - **El navegador nunca llama al backend directamente.** Todo pasa por
   `/api/backend/...`. Una ruta nueva se agrega a la lista blanca del puente con
   la expresión regular más estrecha posible (identificadores acotados, sin
-  `.*`).
+  `.*`), siguiendo la skill `ruta-del-puente`.
 - **La autorización es del backend.** Lo que hace el frontend (ocultar un
   enlace, redirigir en `proxy.ts`) es solo experiencia de usuario.
 - **Colores, radios y sombras solo con los tokens de `globals.css`**
