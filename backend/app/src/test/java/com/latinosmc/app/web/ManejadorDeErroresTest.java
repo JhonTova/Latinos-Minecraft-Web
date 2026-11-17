@@ -159,6 +159,36 @@ class ManejadorDeErroresTest {
             assertThat(problema.getType().toString()).endsWith("/verification.too_many_attempts");
             assertThat(problema.getProperties().get("intentosRestantes")).isInstanceOf(Integer.class).isEqualTo(0);
         }
+
+        @Test
+        @DisplayName("CA-1/CA-2: Spring enruta IntentoRechazadoException al manejador especifico, no al conflicto generico")
+        void springEnrutaElIntentoRechazadoAlManejadorEspecifico() {
+            // Llamar al metodo a mano no demuestra que Spring lo elija. Aqui se usa el
+            // mismo resolvedor que usa el DispatcherServlet: si alguien borra el
+            // manejador o lo cambia a un tipo mas general, la excepcion caeria en
+            // conflicto(...) y la respuesta perderia intentosRestantes sin que lo
+            // note ninguna otra prueba.
+            var resolvedor = new org.springframework.web.method.annotation.ExceptionHandlerMethodResolver(
+                    ManejadorDeErrores.class);
+
+            var elegido = resolvedor.resolveMethod(
+                    new EmailVerificationService.IntentoRechazadoException("verification.invalid_code", "x", 2));
+
+            assertThat(elegido).isNotNull();
+            assertThat(elegido.getName()).isEqualTo("intentoRechazado");
+        }
+
+        @Test
+        @DisplayName("CA-4: un conflicto normal sigue yendo al manejador generico (control)")
+        void springEnrutaUnConflictoNormalAlManejadorGenerico() {
+            var resolvedor = new org.springframework.web.method.annotation.ExceptionHandlerMethodResolver(
+                    ManejadorDeErrores.class);
+
+            var elegido = resolvedor.resolveMethod(new DomainException.Conflict("verification.expired", "x"));
+
+            assertThat(elegido).isNotNull();
+            assertThat(elegido.getName()).isEqualTo("conflicto");
+        }
     }
 
     @Nested
