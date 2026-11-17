@@ -60,12 +60,17 @@ Thumbs.db
 # repositorio se comportaba distinto segun la maquina.
 CLAUDE.md
 DESPLIEGUE.md
-# De .claude/ solo se versionan las skills del equipo; los ajustes y permisos
-# (settings.local.json, etc.) siguen siendo de cada desarrollador. Se usa
+# De .claude/ se versiona el arnes del equipo: skills, reglas, agentes, hooks y
+# los ajustes compartidos (settings.json). Todo lo demas (settings.local.json,
+# memoria de agentes, etc.) sigue siendo de cada desarrollador. Se usa
 # '.claude/*' y no '.claude/' porque git no puede reincluir un archivo si la
 # carpeta que lo contiene entera esta excluida.
 **/.claude/*
 !**/.claude/skills/
+!**/.claude/rules/
+!**/.claude/agents/
+!**/.claude/hooks/
+!**/.claude/settings.json
 
 # Notas de trabajo personales de cada desarrollador.
 *.local.md

@@ -102,6 +102,24 @@ los contenedores. **Lo que llega a `main` llega a producción**, así que:
 - No edites migraciones Flyway existentes ni borres ADRs.
 - No construyas lo que está fuera de alcance en la v1: subastas, marketplace,
   wallet o créditos prepago, afiliados, Kubernetes, Kafka.
-- `CLAUDE.md`, `DESPLIEGUE.md`, `*.local.md` y `.claude/` (salvo
-  `.claude/skills/`) son archivos locales de cada desarrollador y están en
-  `.gitignore` a propósito: no los agregues al repositorio.
+- `CLAUDE.md`, `DESPLIEGUE.md`, `*.local.md` y `.claude/settings.local.json`
+  son archivos locales de cada desarrollador y están en `.gitignore` a
+  propósito: no los agregues al repositorio.
+
+## El arnés (cómo está configurado el agente)
+
+La herramienta del equipo es Claude Code. Lo que se versiona en `.claude/` es
+del equipo y cambia por pull request, igual que el código:
+
+| Pieza | Dónde | Cuándo se carga |
+|---|---|---|
+| Memoria | `AGENTS.md` (este), `backend/AGENTS.md`, `frontend/AGENTS.md` | El de la raíz, al iniciar; los otros, al tocar su carpeta |
+| Reglas | `.claude/rules/*.md` | `git-y-pull-requests.md` siempre; las demás, al leer o editar un archivo que cumple su `paths:` |
+| Ajustes compartidos | `.claude/settings.json` | Siempre: niega leer `.env` y editar la configuración de producción |
+
+Claude Code lee `AGENTS.md` directamente mientras no exista un `CLAUDE.md`. Si
+creas un `CLAUDE.md` local, empiézalo con la línea `@AGENTS.md`; sin ella, esta
+memoria deja de cargarse.
+
+Una regla va en `.claude/rules/` cuando es corta y debe cumplirse cada vez que
+se toca un tipo de archivo. Lo que describe el proyecto va en un `AGENTS.md`.
