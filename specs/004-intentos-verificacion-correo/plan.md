@@ -67,7 +67,7 @@ puntos clave.
 | **D6.** El frontend tiene una función pura en `frontend/src/lib/intentos-de-verificacion.ts`. `textoDeIntentos(x: unknown): string \| null` cubre CA-9 a CA-11. `avisoDeVerificacion(problema: unknown): string \| null` cubre CA-12 y CA-13: con `invalid_code` devuelve «El código no es correcto.» más el texto de intentos; con `too_many_attempts` devuelve el texto de CA-10; con cualquier otra cosa, `null`. | Meter la lógica en el componente, que no tiene pruebas (ADR-0031). | Sigue el patrón de `rechazo-de-voto.ts` de la spec 002. El texto lo pone el frontend, con tildes, y no muestra el `detail` del backend. |
 | **D7.** En `formulario-verificar.tsx`: `const problema = await respuesta.clone().json().catch(() => null)`. Si `avisoDeVerificacion(problema)` devuelve texto, se pinta ese; si no, `mensajeDeError(respuesta)`, como hoy. | Cambiar la firma de `mensajeDeError` en `ui.tsx`. | `ui.tsx` no se toca y el resto de pantallas quedan igual (CA-13). |
 | **D8.** Textos propuestos. CA-10: «No te quedan intentos. Pide un código nuevo con «No me ha llegado, enviar otro».» Con `invalid_code` y 0 intentos: «El código no es correcto. No te quedan intentos. Pide…». Con 1 a 4: «El código no es correcto. Te quedan N intentos.» | — | Se puede cambiar en P-5 sin tocar el diseño. |
-| **D9.** Los límites se fijan con pruebas de comportamiento (CA-5 a CA-7) con `Clock.fixed` y `Clock.offset`, y con `ArgumentCaptor` sobre `guardar` y `codigoVigente`. Las constantes no se hacen públicas. | Exponer las constantes para la prueba. | Una prueba que lee la constante no detecta un cambio de valor. Una que mide `ahora + 15 min` sí lo detecta. |
+| **D9.** Los límites se fijan con pruebas de comportamiento (CA-5 a CA-7) con `Clock.fixed`, y con `ArgumentCaptor` sobre `guardar` y `codigoVigente`. Las constantes no se hacen públicas. | Exponer las constantes para la prueba. | Una prueba que lee la constante no detecta un cambio de valor. Una que mide `ahora + 15 min` sí lo detecta. |
 
 ## Archivos que se tocan
 
@@ -92,14 +92,14 @@ sube `cobertura.suelo` en un commit propio.
 
 | Criterio | Prueba | Tipo |
 |---|---|---|
-| CA-1 | `EmailVerificationServiceTest › CodigoIncorrecto › restaN` (parametrizada `N = 0..4` → 4..0, comprueba `code`, `intentosRestantes` y `sumarIntento(id)`) + `ManejadorDeErroresTest › intentoRechazadoLlevaIntentosRestantesEntero` | unitaria |
+| CA-1 | `EmailVerificationServiceTest › CodigoIncorrecto › restaN` (parametrizada `N = 0..4` → 4..0, comprueba `code`, `intentosRestantes` y `sumarIntento(id)`) + `ManejadorDeErroresTest › intentoRechazadoLlevaIntentosRestantesEntero` + `› springEnrutaElIntentoRechazadoAlManejadorEspecifico` (añadida por el hallazgo 5 del revisor; con `ExceptionHandlerMethodResolver`) | unitaria |
 | CA-2 | `EmailVerificationServiceTest › IntentosAgotados › conCincoFallosNiSiquieraElCorrectoVale` (`code`, `intentosRestantes = 0`, sin `sumarIntento`, `marcarConsumido` ni `marcarEmailVerificado`) + `ManejadorDeErroresTest › intentosAgotadosLlevaCero` | unitaria |
 | CA-3 | `EmailVerificationServiceTransaccionTest › codigoIncorrectoHaceCommitYNoRollback` (y, como control, `caducadoHaceRollback`) | integración con proxy de Spring, sin base de datos |
-| CA-4 | `ManejadorDeErroresTest › conflictoGenericoSinIntentosRestantes`, `› ventanaAbiertaMantieneSegundosRestantes`, `› votoDiarioMantieneSegundosRestantes`, `› cupoDeIpMantieneLimite` | unitaria |
+| CA-4 | `ManejadorDeErroresTest › conflictoGenericoSinIntentosRestantes`, `› ventanaAbiertaMantieneSegundosRestantes`, `› votoDiarioMantieneSegundosRestantes`, `› cupoDeIpMantieneLimite`, `› springEnrutaUnConflictoNormalAlManejadorGenerico` | unitaria |
 | CA-5 | `EmailVerificationServiceTest › Vigencia › guardaConCaducidadDeQuinceMinutos`, `› buscaVigenteConElRelojInyectado`, `› sinVigenteRespondeExpiradoSinEscribir` | unitaria |
 | CA-6 | `EmailVerificationServiceTest › CodigoIncorrecto › restaN(4)`, `› IntentosAgotados`, `› ConCuatroFallos › elCorrectoTodaviaVerifica` | unitaria |
 | CA-7 | `EmailVerificationServiceTest › EsperaEntreEnvios › a59sRechaza`, `› a0sRechaza`, `› a60sExactosEnvia`, `› aMasDe60sEnvia`, `› sinEnvioPrevioEnvia` | unitaria |
-| CA-8 | `EmailVerificationServiceTest › CaminoFeliz › conEspaciosYGuiones` (parametrizada), `› marcaConEmailDelCodigoYRelojInyectado`, `› codigoDeSeisDigitosEnElCorreoYSoloSuHashGuardado` | unitaria |
+| CA-8 | `EmailVerificationServiceTest › CaminoFeliz › conEspacios`, `› conGuion`, `› marcaConEmailDelCodigoYRelojInyectado`, `› codigoDeSeisDigitosEnElCorreoYSoloSuHashGuardado` | unitaria |
 | CA-9 | `intentos-de-verificacion.test.ts › textoDeIntentos › plural y singular` | Vitest |
 | CA-10 | `intentos-de-verificacion.test.ts › textoDeIntentos › cero y negativos piden código nuevo` | Vitest |
 | CA-11 | `intentos-de-verificacion.test.ts › textoDeIntentos › valores no enteros devuelven null` | Vitest |

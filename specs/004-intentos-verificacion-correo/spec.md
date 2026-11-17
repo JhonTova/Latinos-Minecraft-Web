@@ -1,6 +1,6 @@
 # Spec 004 — Decir cuántos intentos quedan al verificar el correo
 
-- **Estado:** Aprobada (17/11/2026, con las respuestas P-1 a P-6)
+- **Estado:** Implementada. Faltan la verificación visual, la subida de `cobertura.suelo` y la fusión. Se aprobó el 17/11/2026, con las respuestas P-1 a P-6.
 - **Rama:** `feat/004-intentos-verificacion-correo`
 - **Parte:** ambas
 - **Riesgo:** 🔴 crítico (`identity`: verificación de correo, ver `backend/AGENTS.md`)
@@ -81,7 +81,7 @@ Notación: `t(x)` es la función pura que, en `frontend/src/lib/`, convierte
 | CA-10 | `t(0)` y cualquier entero negativo devuelven un texto que dice que no quedan intentos y que hay que pedir un código nuevo con el botón «No me ha llegado, enviar otro». Nunca sale «Te quedan 0 intentos» ni un número negativo. |
 | CA-11 | Si `x` no es un entero finito (`undefined`, `null`, `NaN`, `Infinity`, `2.5`, `"2"`, `{}`), la función indica que no hay texto que mostrar y no se inventa ningún número. |
 | CA-12 | Dada una respuesta `409` `verification.invalid_code` con `intentosRestantes: 2`, cuando el usuario pulsa «Verificar», entonces ve en el aviso de error «El código no es correcto.» y «Te quedan 2 intentos.». Con `intentosRestantes: 0` ve el texto de CA-10. Sin `intentosRestantes` ve solo el mensaje, como hoy. |
-| CA-13 | Dada una respuesta `409` `verification.too_many_attempts`, cuando el usuario pulsa «Verificar», entonces ve el texto de CA-10. Cualquier otro error (otro `title`, un cuerpo que no es JSON o un fallo de red) se muestra como hoy, con `mensajeDeError`. |
+| CA-13 | Dada una respuesta `409` `verification.too_many_attempts`, cuando el usuario pulsa «Verificar», entonces ve el texto de CA-10. Cualquier otro error (otro `title` o un cuerpo que no es JSON) se muestra como hoy, con `mensajeDeError`. Un fallo de red del navegador se comporta como hoy: esta spec no lo cambia (ver «Cambios durante la implementación»). |
 
 ### Global
 
@@ -98,7 +98,9 @@ Notación: `t(x)` es la función pura que, en `frontend/src/lib/`, convierte
   P-3). El `UPDATE attempts = attempts + 1` es atómico, pero la comprobación
   `intentos >= 5` lee el valor antes y por separado. Si llegan K peticiones a la
   vez con 4 fallos, todas leen 4 y todas se evalúan: un atacante obtiene K
-  intentos en lugar de 5, y solo lo frena el control de tráfico por IP.
+  intentos en lugar de 5, y solo lo frena el control de tráfico por IP:
+  `/auth/verificar` entra en la categoría `ESCRITURA` de `ControlDeTrafico`,
+  con 20 peticiones por minuto y por IP, según el `revisor`.
   - **Solución propuesta**, para un `fix/` posterior: `SELECT … FOR UPDATE` en
     `VerificationRepository.codigoVigente`, que serializa los intentos sobre el
     mismo código.
@@ -122,8 +124,8 @@ Ninguna de las cuatro aplica, según el mapa del analista: la tabla ya tiene
 `attempts` (`V10__verificacion_de_email.sql:31`), el endpoint `/auth/verificar`
 no es del plugin y la prueba transaccional no necesita dependencias nuevas.
 **Pero hay una parada de seguridad**: esta spec también corrige un fallo de seguridad en `identity`
-que hoy está en producción (CA-3). El desarrollador debe decidir si va en esta
-rama o en un `fix/` aparte antes (pregunta P-1).
+que hoy está en producción (CA-3). El desarrollador decidió que va en esta rama
+(P-1).
 
 ## Decisiones del desarrollador
 
@@ -142,4 +144,22 @@ rollback (`EmailVerificationService.java:94-110`).
 
 ## Cambios durante la implementación
 
-Vacío mientras lo implementado coincida con lo especificado.
+- **CA-13: el fallo de red estaba mal descrito.** La spec decía que un fallo
+  de red «se muestra como hoy, con `mensajeDeError`», pero hoy no pasa por
+  ahí. Lo detectó `dev-frontend`, lo confirmó el `revisor` (hallazgo bajo 3) y
+  ya pasaba en `main`, así que no es una regresión:
+  - Si falla la red del navegador, el `fetch` de `formulario-verificar.tsx`
+    rechaza sin `catch` y el botón se queda en «cargando», sin mensaje.
+  - Si el backend está caído, el puente devuelve un 500 que no es JSON y
+    `mensajeDeError` muestra «No hay conexión con el servidor.».
+
+  Se corrigió el texto de CA-13 para no prometer lo que no hace. El
+  comportamiento no cambia, y el arreglo queda para un `fix/` aparte.
+- **Una prueba más de las previstas en el plan para CA-1, CA-2 y CA-4.** El
+  `revisor` señaló que las pruebas de `ManejadorDeErrores` llamaban al método
+  directamente (hallazgo bajo 5). Se añadieron dos pruebas con
+  `ExceptionHandlerMethodResolver`, que fijan que Spring envía
+  `IntentoRechazadoException` a su manejador y un `Conflict` normal al
+  genérico. No cambia ningún criterio.
+- **CA-12 y CA-13 no tienen verificación visual.** Lo que el plan preveía para
+  `verificador-ui` no se pudo hacer en este entorno (ver `tareas.md`, T9).
