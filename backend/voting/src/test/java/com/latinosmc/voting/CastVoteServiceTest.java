@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.latinosmc.shared.DomainException;
@@ -258,6 +259,135 @@ class CastVoteServiceTest {
         assertThat(resultado.yaExistia()).isTrue();
         assertThat(resultado.voto().id()).isEqualTo(ganador.id());
         verify(publicador, never()).publish(any());
+    }
+
+    // --- puedeVotar: aviso previo al plugin (spec 003) -------------------------
+
+    /**
+     * puedeVotar es una consulta: no puede escribir nada ni publicar eventos, y
+     * esta comprobacion se repite en cada prueba para que ninguna rama lo rompa.
+     */
+    private void verificarQueNoHuboEfectos() {
+        verifyNoInteractions(publicador);
+        verify(repositorio, never()).insertar(any(), anyString(), any(), anyString());
+        verify(repositorio, never()).crearRecompensaPendiente(any(), any(), anyString());
+        verify(repositorio, never()).guardarSenales(any(), anyList());
+    }
+
+    @Test
+    @DisplayName("CA-1: sin regla global, quien voto aqui hace 6 h recibe YA_VOTO_AQUI con 18 h")
+    void puedeVotar_sinReglaGlobal_votoAquiHaceSeisHoras_respondeYaVotoAquiConDieciochoHoras() {
+        when(repositorio.ultimoVotoAceptado(eq(SERVIDOR_ID), any()))
+                .thenReturn(Optional.of(AHORA.minus(Duration.ofHours(6))));
+
+        var respuesta = servicio.puedeVotar(SERVIDOR_ID, steve);
+
+        assertThat(respuesta).isEqualTo(new CastVoteService.Disponibilidad(false, "YA_VOTO_AQUI", Duration.ofHours(18)));
+        verificarQueNoHuboEfectos();
+    }
+
+    /** Semiabierta (ADR-0011): en el instante exacto del fin votar() acepta, asi que puedeVotar tambien. */
+    @Test
+    @DisplayName("CA-2: si la ventana termina justo ahora, puede votar")
+    void puedeVotar_sinReglaGlobal_finDeVentanaJustoAhora_puede() {
+        when(repositorio.ultimoVotoAceptado(eq(SERVIDOR_ID), any()))
+                .thenReturn(Optional.of(AHORA.minus(Duration.ofHours(24))));
+
+        var respuesta = servicio.puedeVotar(SERVIDOR_ID, steve);
+
+        assertThat(respuesta).isEqualTo(new CastVoteService.Disponibilidad(true, null, Duration.ZERO));
+        verificarQueNoHuboEfectos();
+    }
+
+    @Test
+    @DisplayName("CA-2: un segundo antes del fin de la ventana, YA_VOTO_AQUI con 1 s")
+    void puedeVotar_sinReglaGlobal_unSegundoAntesDelFin_respondeYaVotoAquiConUnSegundo() {
+        when(repositorio.ultimoVotoAceptado(eq(SERVIDOR_ID), any()))
+                .thenReturn(Optional.of(AHORA.minus(Duration.ofHours(24)).plusSeconds(1)));
+
+        var respuesta = servicio.puedeVotar(SERVIDOR_ID, steve);
+
+        assertThat(respuesta).isEqualTo(new CastVoteService.Disponibilidad(false, "YA_VOTO_AQUI", Duration.ofSeconds(1)));
+        verificarQueNoHuboEfectos();
+    }
+
+    @Test
+    @DisplayName("CA-3: un voto aqui mas antiguo que la ventana no bloquea")
+    void puedeVotar_sinReglaGlobal_votoAquiFueraDeVentana_puede() {
+        when(repositorio.ultimoVotoAceptado(eq(SERVIDOR_ID), any()))
+                .thenReturn(Optional.of(AHORA.minus(Duration.ofHours(25))));
+
+        var respuesta = servicio.puedeVotar(SERVIDOR_ID, steve);
+
+        assertThat(respuesta).isEqualTo(new CastVoteService.Disponibilidad(true, null, Duration.ZERO));
+        verificarQueNoHuboEfectos();
+    }
+
+    @Test
+    @DisplayName("CA-4: sin regla global, un voto reciente a otro servidor no bloquea")
+    void puedeVotar_sinReglaGlobal_votoRecienteEnOtroServidor_puede() {
+        when(repositorio.ultimoVotoAceptadoEnCualquierServidor(any()))
+                .thenReturn(Optional.of(AHORA.minus(Duration.ofHours(1))));
+        when(repositorio.ultimoVotoAceptado(eq(SERVIDOR_ID), any())).thenReturn(Optional.empty());
+
+        var respuesta = servicio.puedeVotar(SERVIDOR_ID, steve);
+
+        assertThat(respuesta).isEqualTo(new CastVoteService.Disponibilidad(true, null, Duration.ZERO));
+        verificarQueNoHuboEfectos();
+    }
+
+    /** Con el hash esperado y no any(): consultar la identidad equivocada daria un si falso. */
+    @Test
+    @DisplayName("CA-5: consulta el voto de ESTE servidor y de ESTA identidad, y no el global")
+    void puedeVotar_sinReglaGlobal_consultaSoloElServidorYLaIdentidadCorrectos() {
+        byte[] hashEsperado = hasher.hashIdentidad(steve);
+        when(repositorio.ultimoVotoAceptado(eq(SERVIDOR_ID), eq(hashEsperado)))
+                .thenReturn(Optional.of(AHORA.minus(Duration.ofHours(6))));
+
+        var respuesta = servicio.puedeVotar(SERVIDOR_ID, steve);
+
+        // El resultado prueba que se uso el hash correcto: con otro, el doble devolveria vacio.
+        assertThat(respuesta.puede()).isFalse();
+        verify(repositorio).ultimoVotoAceptado(eq(SERVIDOR_ID), eq(hashEsperado));
+        verify(repositorio, never()).ultimoVotoAceptadoEnCualquierServidor(any());
+        verificarQueNoHuboEfectos();
+    }
+
+    @Test
+    @DisplayName("CA-5: un voto reciente solo en OTRO servidor no impide votar en este")
+    void puedeVotar_sinReglaGlobal_votoSoloEnOtroServidorId_puede() {
+        UUID otroServidor = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        when(repositorio.ultimoVotoAceptado(eq(otroServidor), any()))
+                .thenReturn(Optional.of(AHORA.minus(Duration.ofHours(1))));
+
+        var respuesta = servicio.puedeVotar(SERVIDOR_ID, steve);
+
+        assertThat(respuesta).isEqualTo(new CastVoteService.Disponibilidad(true, null, Duration.ZERO));
+        verificarQueNoHuboEfectos();
+    }
+
+    @Test
+    @DisplayName("CA-6: con la regla global, un voto en cualquier servidor dentro de la ventana da YA_VOTO_HOY")
+    void puedeVotar_conReglaGlobal_votoHoyEnCualquiera_respondeYaVotoHoy() {
+        when(ajustes.actuales()).thenReturn(new VoteSettings(true, 50, Duration.ofHours(24)));
+        when(repositorio.ultimoVotoAceptadoEnCualquierServidor(any()))
+                .thenReturn(Optional.of(AHORA.minus(Duration.ofHours(5))));
+
+        var respuesta = servicio.puedeVotar(SERVIDOR_ID, steve);
+
+        assertThat(respuesta).isEqualTo(new CastVoteService.Disponibilidad(false, "YA_VOTO_HOY", Duration.ofHours(19)));
+        verificarQueNoHuboEfectos();
+    }
+
+    @Test
+    @DisplayName("CA-6: con la regla global y sin voto en la ventana, puede votar")
+    void puedeVotar_conReglaGlobal_sinVotoHoy_puede() {
+        when(ajustes.actuales()).thenReturn(new VoteSettings(true, 50, Duration.ofHours(24)));
+
+        var respuesta = servicio.puedeVotar(SERVIDOR_ID, steve);
+
+        assertThat(respuesta).isEqualTo(new CastVoteService.Disponibilidad(true, null, Duration.ZERO));
+        verificarQueNoHuboEfectos();
     }
 
     // --- Reglas globales (V14) -----------------------------------------------
