@@ -1,6 +1,6 @@
 # ADR-0016 — El jugador nunca escribe su nick: token de un solo uso
 
-- **Estado:** 🟡 Propuesto — corrige el flujo descrito por el usuario
+- **Estado:** ✅ Vigente — implementado: `VoteTokenController`, `PluginController` (`POST /api/v1/plugin/vote-tokens`) y `ComandoVotar` del plugin desde la `v0.2.0`
 - **Fecha:** 2026-08-04
 
 ## Contexto

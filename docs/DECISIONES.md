@@ -30,7 +30,7 @@ contradicciones (documentadas abajo). Este archivo es lo que manda.
 | [0013](decisiones/0013-slots-destacados.md) | Venta de slots a precio fijo (sustituye subastas) | ✅ Vigente |
 | [0014](decisiones/0014-votifier.md) | Compatibilidad con Votifier | 🟡 Propuesto |
 | [0015](decisiones/0015-antifraude-lee-tabla-votos.md) | Deuda deliberada: el antifraude lee la tabla de votos | ✅ Vigente |
-| [0016](decisiones/0016-token-de-voto.md) | El jugador nunca escribe su nick: token de un solo uso | 🟡 Propuesto |
+| [0016](decisiones/0016-token-de-voto.md) | El jugador nunca escribe su nick: token de un solo uso | ✅ Vigente |
 | [0017](decisiones/0017-imagenes-subidas.md) | Imágenes subidas: nada de SVG, todo reprocesado | ✅ Vigente |
 | [0018](decisiones/0018-paypal-como-pasarela-principal.md) | PayPal como pasarela principal, Stripe como alternativa | ✅ Vigente |
 | [0019](decisiones/0019-lecturas-sql-entre-modulos.md) | Deuda deliberada: lecturas SQL de solo lectura entre módulos | ✅ Vigente |
