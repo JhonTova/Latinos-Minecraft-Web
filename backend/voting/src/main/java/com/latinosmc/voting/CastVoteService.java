@@ -66,9 +66,11 @@ public class CastVoteService {
      *
      * <p>No consume nada ni deja rastro: es una consulta, y su respuesta no
      * autoriza nada. La comprobacion que manda sigue estando dentro de
-     * {@link #votar}, que es donde ocurre la escritura. Si esta se equivocara por
-     * exceso, el jugador recibiria su codigo y el voto se rechazaria despues;
-     * nunca al reves.
+     * {@link #votar}, que es donde ocurre la escritura. Responde con las mismas
+     * ventanas que {@code votar}: la global (YA_VOTO_HOY) si esta activa y, si no,
+     * la del servidor (YA_VOTO_AQUI). Si esta se equivocara por exceso, el
+     * jugador recibiria su codigo y el voto se rechazaria despues; nunca al
+     * reves.
      */
     @Transactional(readOnly = true)
     public Disponibilidad puedeVotar(UUID servidorId, PlayerIdentity identidad) {
@@ -89,11 +91,19 @@ public class CastVoteService {
             return new Disponibilidad(true, null, Duration.ZERO);
         }
 
-        // Sin la regla global, cada servidor tiene su propia ventana y aqui solo
-        // llega el identificador, no la ficha. En lugar de adivinar la ventana
-        // —y arriesgarse a decirle que no a quien si puede votar— se responde
-        // que si: esto es una cortesia para ahorrarle pasos al jugador, y quien
-        // decide de verdad es votar(), que si tiene la ficha delante.
+        // Sin la regla global, lo que cuenta es el ultimo voto aceptado a ESTE
+        // servidor. La ventana es la misma para todos y la fija la plataforma
+        // (ADR-0023), asi que no hay que adivinar nada del servidor: se puede
+        // responder con certeza y sin leer su ficha. Se usa isBefore, igual que
+        // en votar(), para que ambos coincidan en el instante exacto en que la
+        // ventana se cierra (ADR-0011, ventana semiabierta).
+        var ultimoAqui = repositorio.ultimoVotoAceptado(servidorId, identidadHash);
+        if (ultimoAqui.isPresent()) {
+            Instant disponibleEn = ultimoAqui.get().plus(reglas.ventana());
+            if (ahora.isBefore(disponibleEn)) {
+                return new Disponibilidad(false, "YA_VOTO_AQUI", Duration.between(ahora, disponibleEn));
+            }
+        }
         return new Disponibilidad(true, null, Duration.ZERO);
     }
 

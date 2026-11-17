@@ -16,11 +16,11 @@
 
   <properties>
     <!--
-      Modulo critico (ADR-0032). El suelo es la cobertura medida el 2026-11-13,
+      Modulo critico (ADR-0032). El suelo es la cobertura medida (2026-11-13: 0.36; spec 003: 0.408),
       redondeada hacia abajo: no puede bajar, y se sube cuando una spec la mejora.
       Aqui tambien se muta con PIT.
     -->
-    <cobertura.suelo>0.36</cobertura.suelo>
+    <cobertura.suelo>0.40</cobertura.suelo>
     <mutacion.omitir>false</mutacion.omitir>
   </properties>
 
