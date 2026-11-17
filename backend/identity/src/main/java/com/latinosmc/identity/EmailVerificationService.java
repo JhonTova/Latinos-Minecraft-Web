@@ -90,8 +90,15 @@ public class EmailVerificationService {
      *
      * <p>Cada intento fallido cuenta. Agotados los cinco, el codigo muere y hay que
      * pedir otro: sin eso, un millon de combinaciones se prueban en un rato.
+     *
+     * <p>{@code noRollbackFor} es lo que hace que el limite de 5 proteja: Spring
+     * revierte la transaccion ante cualquier excepcion no comprobada, y con ella
+     * se perderia el {@code sumarIntento} que acabamos de hacer. El contador
+     * nunca subiria y se podrian probar codigos sin fin. Se acota a
+     * {@link IntentoRechazadoException} a proposito: {@code verification.expired}
+     * y el resto de errores si deben revertirse.
      */
-    @Transactional
+    @Transactional(noRollbackFor = IntentoRechazadoException.class)
     public void verificar(UUID usuarioId, String codigo) {
         Instant ahora = Instant.now(reloj);
 
@@ -101,13 +108,16 @@ public class EmailVerificationService {
                         "verification.expired", "El codigo ha caducado. Pide uno nuevo."));
 
         if (vigente.intentos() >= MAX_INTENTOS) {
-            throw new DomainException.Conflict(
-                    "verification.too_many_attempts", "Demasiados intentos fallidos. Pide un codigo nuevo.");
+            throw new IntentoRechazadoException(
+                    "verification.too_many_attempts", "Demasiados intentos fallidos. Pide un codigo nuevo.", 0);
         }
 
         if (!vigente.codeHash().equals(hash(normalizar(codigo)))) {
             repositorio.sumarIntento(vigente.id());
-            throw new DomainException.Conflict("verification.invalid_code", "El codigo no es correcto.");
+            throw new IntentoRechazadoException(
+                    "verification.invalid_code",
+                    "El codigo no es correcto.",
+                    Math.max(0, MAX_INTENTOS - (vigente.intentos() + 1)));
         }
 
         repositorio.marcarConsumido(vigente.id(), ahora);
@@ -124,6 +134,27 @@ public class EmailVerificationService {
     @Transactional
     public void marcarVerificadoPorProveedor(UUID usuarioId, String email) {
         repositorio.marcarEmailVerificado(usuarioId, email, Instant.now(reloj));
+    }
+
+    /**
+     * Un intento de verificacion rechazado (codigo incorrecto o intentos agotados).
+     *
+     * <p>Lleva los intentos que quedan para que la web avise antes del bloqueo en
+     * vez de sorprender al usuario con el. Es una clase propia y no un
+     * {@code Conflict} generico para poder excluirla del rollback sin tocar el
+     * resto de errores.
+     */
+    public static class IntentoRechazadoException extends DomainException.Conflict {
+        private final int intentosRestantes;
+
+        public IntentoRechazadoException(String code, String mensaje, int intentosRestantes) {
+            super(code, mensaje);
+            this.intentosRestantes = intentosRestantes;
+        }
+
+        public int intentosRestantes() {
+            return intentosRestantes;
+        }
     }
 
     /** Codigo de 6 digitos, con ceros a la izquierda si hace falta. */

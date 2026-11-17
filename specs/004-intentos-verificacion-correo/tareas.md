@@ -10,7 +10,7 @@ pantalla consume la propiedad nueva.
 - [x] T2 · `pruebas-backend` · `EmailVerificationServiceTest` (CA-1, CA-2, CA-5 a CA-8) y `ManejadorDeErroresTest` (CA-1, CA-2, CA-4), en rojo. Se comprueba con `cd backend && mvn -B -pl app -am test`: deben fallar por la ausencia de `IntentoRechazadoException` o de `intentosRestantes`. Las de los límites que ya se cumplen hoy (CA-5, CA-7, CA-8) pasan desde el principio, y hay que decirlo así.
 - [x] T3 · `pruebas-backend` · `EmailVerificationServiceTransaccionTest` (CA-3), en rojo. Se comprueba con `cd backend && mvn -B -pl identity -am test`: debe fallar porque hoy hay `rollback` y no `commit`.
 - [x] T4 · `orquestador` · Commit `test(identity): ...` con T2 y T3.
-- [ ] T5 · `dev-backend` · `IntentoRechazadoException`, `noRollbackFor` y el manejador en `ManejadorDeErrores` (D1 a D4). Se comprueba con `mvn -B -f backend/pom.xml verify` en verde, incluido `ArquitecturaTest`, y con la cobertura de identity medida.
+- [x] T5 · `dev-backend` · `IntentoRechazadoException`, `noRollbackFor` y el manejador en `ManejadorDeErrores` (D1 a D4). Se comprueba con `mvn -B -f backend/pom.xml verify` en verde, incluido `ArquitecturaTest`, y con la cobertura de identity medida.
 - [x] T6 · `pruebas-frontend` · `intentos-de-verificacion.test.ts` (CA-9 a CA-13), en rojo. Se comprueba con `cd frontend && npm run test`: debe fallar porque el módulo no existe.
 - [x] T7 · `orquestador` · Commit `test(frontend): ...`.
 - [ ] T8 · `dev-frontend` · `intentos-de-verificacion.ts` y `formulario-verificar.tsx` (D6, D7). Se comprueba con `npm run lint`, `npm run test` y `npm run build` en verde.
