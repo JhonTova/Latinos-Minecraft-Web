@@ -41,10 +41,11 @@ spec y el plan.
 4. **Contrato.** Si cambió un endpoint, ¿cambiaron a la vez quien lo consume y
    sus tipos? Si toca `/api/v1/plugin/*`, ¿lo declara la spec?
 5. **Mutación**, solo si el diff toca `identity`, `voting`, `trust` o `billing`
-   y el proyecto tiene el perfil configurado: desde `backend/`,
-   `mvn -B -pl <módulo> -am -P mutacion org.pitest:pitest-maven:mutationCoverage`.
+   (ADR-0032): desde `backend/`, `mvn -B -P mutacion -pl <módulo> -am verify`.
+   El informe queda en `backend/<módulo>/target/pit-reports/mutations.xml`.
    Clasifica cada mutante superviviente de las clases tocadas como *falta una
-   prueba* o *equivalente*, con el motivo.
+   prueba* o *equivalente*, con el motivo. Si el diff baja un `cobertura.suelo`
+   en un `pom.xml`, es un hallazgo alto.
 
 ## Reglas
 

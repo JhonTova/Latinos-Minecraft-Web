@@ -14,6 +14,16 @@
   <name>LatinosMC :: identity</name>
   <description>Identidad y acceso: usuarios, sesiones, credenciales</description>
 
+  <properties>
+    <!--
+      Modulo critico (ADR-0032). El suelo es la cobertura medida el 2026-11-13,
+      redondeada hacia abajo: no puede bajar, y se sube cuando una spec la mejora.
+      Aqui tambien se muta con PIT.
+    -->
+    <cobertura.suelo>0.15</cobertura.suelo>
+    <mutacion.omitir>false</mutacion.omitir>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.latinosmc</groupId>

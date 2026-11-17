@@ -12,6 +12,7 @@ API REST en **Java 21 + Spring Boot**, organizada como **monolito modular**
 mvn -B verify                         # compila y ejecuta todas las pruebas
 mvn -B -pl voting -am verify          # solo un módulo y lo que necesita
 mvn -B -pl app -am verify -Dtest=ArquitecturaTest -Dsurefire.failIfNoSpecifiedTests=false
+mvn -B -Pmutacion -pl voting -am verify   # mutación con PIT en un módulo crítico
 mvn -B install -DskipTests            # empaquetar sin pruebas
 java -jar app/target/app-0.1.0-SNAPSHOT.jar   # ejecutar (necesita DB_URL, DB_USER, DB_PASSWORD)
 ```
@@ -69,6 +70,12 @@ rastros.
   `src/test/java` y en el mismo paquete.
 - Los módulos 🔴 críticos exigen pruebas de los casos de borde y de los errores,
   no solo del camino feliz.
+- **Cobertura y mutación (ADR-0032):** `mvn verify` mide la cobertura con JaCoCo
+  (`<módulo>/target/site/jacoco/`) y falla si un módulo 🔴 baja de su
+  `cobertura.suelo`. **Nunca bajes ese número para que pase**: escribe la prueba
+  que falta. Si tu cambio sube la cobertura de un módulo 🔴, sube su suelo en el
+  mismo pull request. En un módulo 🔴, los mutantes supervivientes de las clases
+  que tocaste se clasifican en el `tareas.md` de la spec.
 - **Formato:** el `pom.xml` declara Spotless (Palantir Java Format), pero el
   código actual no pasa `spotless:check`. **No ejecutes `mvn spotless:apply`**:
   reformatearía cientos de archivos y el diff ocultaría el cambio real. Imita el
