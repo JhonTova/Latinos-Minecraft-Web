@@ -43,8 +43,15 @@ Sigue siendo una consulta de cortesía. No escribe nada, y quien decide es `vota
 - **Rojo:** `cd backend && mvn -B -pl voting -am test` da `Tests run: 46, Failures: 3, Errors: 0`. Las tres fallan por aserción: CA-1 esperaba `[false, YA_VOTO_AQUI, PT18H]` y obtuvo `[true, null, PT0S]`; CA-2, un segundo antes, esperaba `[false, YA_VOTO_AQUI, PT1S]`; CA-5 esperaba `puede = false`.
 - **Verde:** `mvn -B -f backend/pom.xml verify` da BUILD SUCCESS, sin fallos ni errores en ningún módulo: `shared` 50, `identity` 27, `servers` 79, `voting` 46, `trust` 35, `billing` 22 y `app` 107 pruebas. `ArquitecturaTest` pasa 4 de 4 y `jacoco:check` dice «All coverage checks have been met». Después de las correcciones, `voting` tiene 48 pruebas y `CastVoteServiceTest` 31, todas en verde.
 - **Mutación:** `mvn -B -Pmutacion -pl voting -am verify`. En `puedeVotar` hay **9 mutantes y los 9 mueren**, así que no queda ningún superviviente. En todo `voting` hay 106 mutantes, con una fuerza de las pruebas del 98 %. El único superviviente de `CastVoteService` está en la línea 317 (`CupoDeIpAgotadoException`). Ya existía antes de esta rama y queda fuera del diff.
-- **Cobertura de `voting`:** **0,408** de líneas (137 de 336), con el suelo en 0,36. El suelo `cobertura.suelo` se sube en un commit aparte, fuera del sistema de agentes, porque ningún agente tiene permiso para editar `pom.xml`.
-- **Revisión:** el `revisor` hizo varias vueltas y no encontró ningún hallazgo alto. Los medios y bajos (M-1, ventana fija sin detectar; B-1 y B-2, pruebas que no podían fallar; B-3, etiqueta de criterio) se corrigieron en esta rama. El detalle está en `tareas.md`.
+- **Cobertura de `voting`:** **0,408** de líneas (137 de 336), con el suelo en 0,36. ADR-0032 pide subir `cobertura.suelo` (`backend/voting/pom.xml`) en este mismo PR. Ningún agente tiene permiso para editar `pom.xml`, así que el suelo se sube **en un commit propio de esta rama, fuera del sistema de agentes**, después del cierre de la spec.
+- **Revisión:** el `revisor` hizo tres vueltas, la última de confirmación con `verify` en verde, y no encontró ningún hallazgo alto. Lo corregido en esta rama:
+  - M-1: una ventana fija no la detectaba ninguna prueba.
+  - M-2: la evidencia estaba incompleta.
+  - B-1 y B-2: pruebas que no podían fallar.
+  - B-3: una etiqueta de criterio equivocada.
+  - B-4 y B-5: referencias de los documentos.
+
+  Queda M-4, el suelo de cobertura, que se resuelve con el commit del punto anterior. El detalle está en `tareas.md`.
 
 ## Fuera de alcance
 
