@@ -10,8 +10,8 @@ rojo va antes que el código.
 - [x] T3 · `pruebas-backend` · Pruebas de CA-1 a CA-5 y CA-7 en `CastVoteServiceTest`, en rojo. Se comprueba con `cd backend && mvn -B -pl voting -am test`: fallan las de CA-1 y CA-2 («un segundo antes»), porque hoy devuelve `puede = true`, y no por un error de compilación ni de configuración.
 - [x] T4 · `pruebas-backend` · Pruebas de regresión de CA-6 (regla global) y `PluginControllerTest` para CA-8 (aprobada en P-2). Se comprueba con que pasan en verde ya con el código actual; se explica en el informe por qué es lo correcto.
 - [x] T5 · `orquestador` · Commit `test(voting): ...` con T3 y T4.
-- [ ] T6 · `dev-backend` · `puedeVotar` comprueba la ventana por servidor con la regla global desactivada, y se reemplaza el comentario citando ADR-0023. Se comprueba con `cd backend && mvn -B -pl voting -am test` en verde y `mvn -B -f backend/pom.xml verify` en verde (incluye `ArquitecturaTest` y el suelo de JaCoCo).
-- [ ] T7 · `orquestador` · Commit `feat(voting): ...`.
+- [x] T6 · `dev-backend` · `puedeVotar` comprueba la ventana por servidor con la regla global desactivada, y se reemplaza el comentario citando ADR-0023. Se comprueba con `cd backend && mvn -B -pl voting -am test` en verde y `mvn -B -f backend/pom.xml verify` en verde (incluye `ArquitecturaTest` y el suelo de JaCoCo).
+- [x] T7 · `orquestador` · Commit `feat(voting): ...`.
 - [ ] T8 · `revisor` · Revisión del diff completo de la rama, CA-9 y mutación con `mvn -B -Pmutacion -pl voting -am verify`. Clasifica los supervivientes de `puedeVotar` y lee la cobertura de `voting` contra el suelo `0.36`.
 - [ ] T9 · `orquestador` · Cierre: Evidencia, correcciones y `pr.md` con la parada del contrato `/api/v1/plugin/*` en la primera línea. Sin push ni PR en esta sesión.
 
@@ -23,8 +23,9 @@ Salida real de los comandos, pegada al cerrar la spec.
 |---|---|---|
 | Rojo (voting) | `cd backend && mvn -B -pl voting -am test` (lo ejecutó `pruebas-backend`) | `Tests run: 46, Failures: 3, Errors: 0`, BUILD FAILURE. Fallan por aserción: CA-1 (esperado `[false, YA_VOTO_AQUI, PT18H]`, obtenido `[true, null, PT0S]`), CA-2 un segundo antes (esperado `[false, YA_VOTO_AQUI, PT1S]`, obtenido `[true, null, PT0S]`) y CA-5 consulta correcta (`Expecting value to be false but was true`). Las demás pruebas nuevas pasan, como se esperaba. |
 | CA-8 (contrato) | `cd backend && mvn -B -pl app -am test -Dtest=PluginControllerTest -Dsurefire.failIfNoSpecifiedTests=false` | `Tests run: 1, Failures: 0`, BUILD SUCCESS; verde desde el principio a propósito, porque fija el contrato que no cambia |
-| Verde | | |
-| Suite completa | | |
+| Verde (voting) | `cd backend && mvn -B -pl voting -am test` (lo ejecutó `dev-backend`) | `shared` 50 y `voting` 46 pruebas, todas con Failures 0 y Errors 0, BUILD SUCCESS |
+| Suite completa | `mvn -B -f backend/pom.xml verify` (lo ejecutó `dev-backend`) | `shared` 50, `identity` 27, `servers` 79, `voting` 46, `trust` 35, `billing` 22 y `app` 107 pruebas, todas con Failures 0 y Errors 0 (`ArquitecturaTest` 4/4, `PluginControllerTest` 1/1). `jacoco:check` dice «All coverage checks have been met». BUILD SUCCESS |
+| Cobertura de `voting` | `backend/voting/target/site/jacoco/jacoco.csv`, tras el `verify` | 137 de 336 líneas cubiertas, es decir **0,408**, por encima del suelo de 0,36. `CastVoteService` tiene 80 de 81 líneas. El suelo no se sube en esta rama (P-6) |
 | Mutación | | |
 | Revisión | | |
 
