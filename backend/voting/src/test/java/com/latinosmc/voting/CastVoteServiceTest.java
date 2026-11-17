@@ -389,7 +389,7 @@ class CastVoteServiceTest {
     }
 
     @Test
-    @DisplayName("CA-2: con ventana de 12 h, un voto de hace 13 h ya no bloquea")
+    @DisplayName("CA-3: con ventana de 12 h, un voto de hace 13 h ya no bloquea")
     void puedeVotar_sinReglaGlobal_ventanaDeDoceHoras_votoHaceTrece_puede() {
         when(ajustes.actuales()).thenReturn(new VoteSettings(false, 50, Duration.ofHours(12)));
         when(repositorio.ultimoVotoAceptado(eq(SERVIDOR_ID), any()))
