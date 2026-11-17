@@ -1,6 +1,7 @@
 "use client";
 
 import { Aviso, Boton, Campo, mensajeDeError } from "@/components/ui";
+import { avisoDeVerificacion } from "@/lib/intentos-de-verificacion";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -24,7 +25,10 @@ export function FormularioVerificar({ correo }: { correo: string }) {
     });
 
     if (!respuesta.ok) {
-      setError(await mensajeDeError(respuesta));
+      // El cuerpo solo se puede leer una vez: se lee sobre un clon para que
+      // `mensajeDeError` conserve el original si no es un error de intentos.
+      const problema = await respuesta.clone().json().catch(() => null);
+      setError(avisoDeVerificacion(problema) ?? (await mensajeDeError(respuesta)));
       setCargando(false);
       return;
     }
