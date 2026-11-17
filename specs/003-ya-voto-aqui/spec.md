@@ -1,6 +1,6 @@
 # Spec 003 — Avisar al plugin de que el jugador ya votó a este servidor
 
-- **Estado:** Aprobada el 17/11/2026, con las respuestas P-1 a P-7 del plan
+- **Estado:** Implementada, pendiente de la fusión (aprobada el 17/11/2026, con las respuestas P-1 a P-7 del plan)
 - **Rama:** `feat/003-ya-voto-aqui`
 - **Parte:** backend
 - **Riesgo:** 🔴 crítico (módulo `voting`; la respuesta sale por `/api/v1/plugin/*`)

@@ -72,19 +72,20 @@ No se tocan: `PluginController.java`, `VoteRepository.java`,
 
 ## Matriz criterio → prueba
 
-Nombres propuestos; el `pruebas-backend` puede ajustarlos y la matriz se
-actualizará con los definitivos.
+Nombres definitivos, tras las dos vueltas del `revisor`. Todas las pruebas de
+`CastVoteServiceTest` están en
+`backend/voting/src/test/java/com/latinosmc/voting/`.
 
 | Criterio | Prueba | Tipo |
 |---|---|---|
-| CA-1 | `CastVoteServiceTest#puedeVotar_sinReglaGlobal_votoAquiHaceSeisHoras_respondeYaVotoAquiConDieciochoHoras` | unitaria |
+| CA-1 | `CastVoteServiceTest#puedeVotar_sinReglaGlobal_votoAquiHaceSeisHoras_respondeYaVotoAquiConDieciochoHoras` (ventana de 24 h) y `#puedeVotar_sinReglaGlobal_ventanaDeDoceHoras_votoHaceSeisHoras_respondeSeisHoras` (ventana de 12 h: protege que la ventana sale de `reglas.ventana()`, ADR-0023) | unitaria |
 | CA-2 | `CastVoteServiceTest#puedeVotar_sinReglaGlobal_finDeVentanaJustoAhora_puede` y `#puedeVotar_sinReglaGlobal_unSegundoAntesDelFin_respondeYaVotoAquiConUnSegundo` | unitaria (borde) |
-| CA-3 | `CastVoteServiceTest#puedeVotar_sinReglaGlobal_votoAquiFueraDeVentana_puede` | unitaria |
-| CA-4 | `CastVoteServiceTest#puedeVotar_sinReglaGlobal_votoRecienteEnOtroServidor_puede` (con `ultimoVotoAceptadoEnCualquierServidor` devolviendo un voto de hace 1 h y `ultimoVotoAceptado` vacío) | unitaria |
-| CA-5 | En las pruebas de CA-1 y CA-4: `verify(repositorio).ultimoVotoAceptado(eq(SERVIDOR_ID), eq(hashEsperado))` y `verify(repositorio, never()).ultimoVotoAceptadoEnCualquierServidor(any())`; y una prueba con `ultimoVotoAceptado` simulado solo para **otro** `servidorId`, que devuelve `puede = true` | unitaria |
+| CA-3 | `CastVoteServiceTest#puedeVotar_sinReglaGlobal_votoAquiFueraDeVentana_puede` (25 h con 24 h) y `#puedeVotar_sinReglaGlobal_ventanaDeDoceHoras_votoHaceTrece_puede` (13 h con 12 h) | unitaria |
+| CA-4 | `CastVoteServiceTest#puedeVotar_sinReglaGlobal_votoRecienteEnOtroServidor_puede` (la consulta global devuelve un voto de hace 1 h y la de este servidor, vacío) | unitaria |
+| CA-5 | `CastVoteServiceTest#puedeVotar_sinReglaGlobal_consultaSoloElServidorYLaIdentidadCorrectos` (hash exacto de la identidad y `never()` sobre la consulta global) y `#puedeVotar_sinReglaGlobal_usaElServidorIdRecibido` (con un voto solo en el servidor B: A puede votar y B recibe `YA_VOTO_AQUI`) | unitaria |
 | CA-6 | `CastVoteServiceTest#puedeVotar_conReglaGlobal_votoHoyEnCualquiera_respondeYaVotoHoy` y `#puedeVotar_conReglaGlobal_sinVotoHoy_puede` | unitaria (regresión) |
-| CA-7 | En cada prueba de `puedeVotar`: `verifyNoInteractions(publicador)` y `verify(repositorio, never())` sobre `insertar`, `crearRecompensaPendiente` y `guardarSenales` | unitaria |
-| CA-8 | `PluginControllerTest#emitirToken_yaVotoAqui_devuelveMotivoYSegundosSinCodigo`: `puedeVotar` simulado devuelve `(false, "YA_VOTO_AQUI", 18 h)`, y se espera `puedeVotar=false`, `motivo="YA_VOTO_AQUI"`, `segundosRestantes=64800`, `token`/`url` nulos, `vigenciaSegundos=0` y `verify(tokens, never()).emitir(any(), any())` | unitaria (contrato) |
+| CA-7 | `verificarQueNoHuboEfectos()` al final de las 11 pruebas de `puedeVotar`: `verifyNoInteractions(publicador)` y `never()` sobre `insertar`, `crearRecompensaPendiente` y `guardarSenales` | unitaria |
+| CA-8 | `PluginControllerTest#emitirToken_yaVotoAqui_devuelveMotivoYSegundosSinCodigo`, en `backend/app/src/test/java/com/latinosmc/app/web/`. `puedeVotar` simulado para el servidor y la identidad exactos (`PlayerIdentity.mojangUuid(...)`) devuelve `(false, "YA_VOTO_AQUI", 18 h)`. Se espera `puedeVotar=false`, `motivo="YA_VOTO_AQUI"`, `segundosRestantes=64800`, `token` y `url` nulos, `vigenciaSegundos=0` y que nunca se llama a `emitir` | unitaria (contrato) |
 | CA-9 | Revisión del diff por el `revisor` (`git diff` contra la base: no cambian `RespuestaToken`, `PeticionToken`, rutas, migraciones ni `pom.xml` de dependencias) + `mvn -B -f backend/pom.xml verify` en verde, con `ArquitecturaTest` | revisión + suite completa |
 
 **Mutación (ADR-0032).** `mvn -B -Pmutacion -pl voting -am verify` desde
