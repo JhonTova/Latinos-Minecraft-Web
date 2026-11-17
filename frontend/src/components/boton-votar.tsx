@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 
+import { clasificarRechazo } from "@/lib/rechazo-de-voto";
+
 type Estado =
   | { fase: "listo" }
   | { fase: "enviando" }
   | { fase: "hecho" }
-  | { fase: "espera"; segundos: number }
+  | { fase: "espera"; espera: string | null }
+  | { fase: "voto-diario"; espera: string | null }
   | { fase: "error"; mensaje: string };
 
 /**
@@ -36,24 +39,19 @@ export function BotonVotar({
         return;
       }
 
-      const problema = await respuesta.json().catch(() => null);
+      const cuerpo: unknown = await respuesta.json().catch(() => null);
 
-      // La API devuelve los segundos que faltan para que el jugador vea una
-      // cuenta atrás en vez de una fecha: nadie debería tener que pensar en
-      // husos horarios para saber cuándo puede volver a votar.
-      if (problema?.title === "vote.window.open") {
-        setEstado({
-          fase: "espera",
-          segundos: problema.segundosRestantes ?? 0,
-        });
-        return;
+      // La API devuelve los segundos que faltan (no una fecha): nadie debería
+      // tener que pensar en husos horarios para saber cuándo puede volver a
+      // votar. Si el dato no llega, no se inventa un tiempo.
+      const rechazo = clasificarRechazo(cuerpo);
+      if (rechazo.tipo === "voto-diario") {
+        setEstado({ fase: "voto-diario", espera: rechazo.espera });
+      } else if (rechazo.tipo === "ventana-servidor") {
+        setEstado({ fase: "espera", espera: rechazo.espera });
+      } else {
+        setEstado({ fase: "error", mensaje: rechazo.mensaje });
       }
-
-      setEstado({
-        fase: "error",
-        mensaje:
-          problema?.detail ?? "No se pudo registrar tu voto. Inténtalo otra vez.",
-      });
     } catch {
       setEstado({
         fase: "error",
@@ -76,13 +74,37 @@ export function BotonVotar({
     );
   }
 
+  if (estado.fase === "voto-diario") {
+    return (
+      <div
+        role="status"
+        className="rounded-lg border border-border bg-surface-sunken p-6 text-center"
+      >
+        <p className="font-medium">Ya usaste tu voto de hoy</p>
+        <p className="mt-1 text-sm text-muted">
+          Solo se puede votar a un servidor al día.
+        </p>
+        {estado.espera !== null && (
+          <p className="mt-1 text-sm text-muted">
+            Podrás volver a votar en {estado.espera}.
+          </p>
+        )}
+      </div>
+    );
+  }
+
   if (estado.fase === "espera") {
     return (
-      <div className="rounded-lg border border-border bg-surface-sunken p-6 text-center">
+      <div
+        role="status"
+        className="rounded-lg border border-border bg-surface-sunken p-6 text-center"
+      >
         <p className="font-medium">Ya votaste hace poco</p>
-        <p className="mt-1 text-sm text-muted">
-          Puedes volver a votar en {formatearEspera(estado.segundos)}.
-        </p>
+        {estado.espera !== null && (
+          <p className="mt-1 text-sm text-muted">
+            Puedes volver a votar en {estado.espera}.
+          </p>
+        )}
       </div>
     );
   }
@@ -107,12 +129,4 @@ export function BotonVotar({
       )}
     </div>
   );
-}
-
-function formatearEspera(segundos: number): string {
-  const horas = Math.floor(segundos / 3600);
-  const minutos = Math.floor((segundos % 3600) / 60);
-  if (horas > 0) return `${horas} h ${minutos} min`;
-  if (minutos > 0) return `${minutos} min`;
-  return "menos de un minuto";
 }
