@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.latinosmc.servers.ApiKeys;
+import com.latinosmc.shared.identity.PlayerIdentity;
 import com.latinosmc.servers.ServerRepository;
 import com.latinosmc.voting.CastVoteService;
 import com.latinosmc.voting.RewardRepository;
@@ -53,7 +54,7 @@ class PluginControllerTest {
     @Test
     @DisplayName("CA-8: si ya voto aqui, responde el motivo y los segundos sin emitir codigo")
     void emitirToken_yaVotoAqui_devuelveMotivoYSegundosSinCodigo() {
-        when(votos.puedeVotar(eq(SERVIDOR_ID), any()))
+        when(votos.puedeVotar(eq(SERVIDOR_ID), eq(PlayerIdentity.mojangUuid(UUID_JUGADOR))))
                 .thenReturn(new CastVoteService.Disponibilidad(false, "YA_VOTO_AQUI", Duration.ofHours(18)));
 
         var respuesta = controlador.emitirToken(CLAVE, new PluginController.PeticionToken("MOJANG_UUID", UUID_JUGADOR));

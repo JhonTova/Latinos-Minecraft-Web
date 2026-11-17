@@ -353,12 +353,47 @@ class CastVoteServiceTest {
         verificarQueNoHuboEfectos();
     }
 
+    /**
+     * El doble solo responde con voto para el servidor B; para A devuelve vacio.
+     * Si el servicio ignorara el servidorId recibido (o usara uno fijo), una de
+     * las dos consultas daria la respuesta contraria.
+     */
     @Test
-    @DisplayName("CA-5: un voto reciente solo en OTRO servidor no impide votar en este")
-    void puedeVotar_sinReglaGlobal_votoSoloEnOtroServidorId_puede() {
+    @DisplayName("CA-5: el voto reciente en el servidor B bloquea B pero no A, segun el servidorId recibido")
+    void puedeVotar_sinReglaGlobal_usaElServidorIdRecibido() {
         UUID otroServidor = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        when(repositorio.ultimoVotoAceptado(eq(SERVIDOR_ID), any())).thenReturn(Optional.empty());
         when(repositorio.ultimoVotoAceptado(eq(otroServidor), any()))
                 .thenReturn(Optional.of(AHORA.minus(Duration.ofHours(1))));
+
+        var enA = servicio.puedeVotar(SERVIDOR_ID, steve);
+        var enB = servicio.puedeVotar(otroServidor, steve);
+
+        assertThat(enA).isEqualTo(new CastVoteService.Disponibilidad(true, null, Duration.ZERO));
+        assertThat(enB).isEqualTo(new CastVoteService.Disponibilidad(false, "YA_VOTO_AQUI", Duration.ofHours(23)));
+        verificarQueNoHuboEfectos();
+    }
+
+    /** ADR-0023: la ventana viene de los ajustes de la plataforma, no es un 24 h fijo. */
+    @Test
+    @DisplayName("CA-1: con ventana de 12 h, quien voto aqui hace 6 h recibe YA_VOTO_AQUI con 6 h")
+    void puedeVotar_sinReglaGlobal_ventanaDeDoceHoras_votoHaceSeisHoras_respondeSeisHoras() {
+        when(ajustes.actuales()).thenReturn(new VoteSettings(false, 50, Duration.ofHours(12)));
+        when(repositorio.ultimoVotoAceptado(eq(SERVIDOR_ID), any()))
+                .thenReturn(Optional.of(AHORA.minus(Duration.ofHours(6))));
+
+        var respuesta = servicio.puedeVotar(SERVIDOR_ID, steve);
+
+        assertThat(respuesta).isEqualTo(new CastVoteService.Disponibilidad(false, "YA_VOTO_AQUI", Duration.ofHours(6)));
+        verificarQueNoHuboEfectos();
+    }
+
+    @Test
+    @DisplayName("CA-2: con ventana de 12 h, un voto de hace 13 h ya no bloquea")
+    void puedeVotar_sinReglaGlobal_ventanaDeDoceHoras_votoHaceTrece_puede() {
+        when(ajustes.actuales()).thenReturn(new VoteSettings(false, 50, Duration.ofHours(12)));
+        when(repositorio.ultimoVotoAceptado(eq(SERVIDOR_ID), any()))
+                .thenReturn(Optional.of(AHORA.minus(Duration.ofHours(13))));
 
         var respuesta = servicio.puedeVotar(SERVIDOR_ID, steve);
 
