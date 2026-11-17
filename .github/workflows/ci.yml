@@ -66,6 +66,29 @@ jobs:
             flujo:
               - '.github/workflows/ci.yml'
 
+  # Una migracion que ya esta en main ya se aplico en produccion, y Flyway
+  # compara su checksum al arrancar: si alguien la edita, la aplicacion no
+  # levanta tras el despliegue. Ninguna prueba lo detecta, porque ninguna usa una
+  # base de datos real (ADR-0021). Este trabajo si: falla si el pull request
+  # modifica, renombra o borra un archivo de db/migration que existe en main.
+  # Agregar migraciones nuevas esta permitido.
+  #
+  # Corre siempre (es un git diff) para poder marcarlo como check obligatorio:
+  # un trabajo que a veces no se ejecuta dejaria los pull requests esperando.
+  migraciones:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Comprobar que las migraciones aplicadas siguen intactas
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: sh .github/scripts/migraciones-intactas.sh "$BASE"
+
   # Los hooks de .claude/hooks son los que impiden que un agente edite fuera de
   # su carpeta o ejecute un comando que no es de su rol. Si su politica se rompe,
   # los permisos de los agentes dejan de existir sin que nadie lo note: por eso

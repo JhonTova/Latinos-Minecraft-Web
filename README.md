@@ -107,9 +107,13 @@ ejecuta si cambió código de su carpeta (los cambios solo de Markdown no
 cuentan). Si falla el backend, los reportes de las pruebas
 quedan como artefacto de la ejecución durante 7 días.
 
-Para que un PR roto no se pueda fusionar, marca los checks `backend` y
-`frontend` como obligatorios en la protección de `main`
-(*Settings → Branches*).
+Dos trabajos más protegen lo que las pruebas no ven: `migraciones` falla si un
+pull request modifica, renombra o borra una migración Flyway que ya está en
+`main` (ya se aplicó en producción), y `arnes` ejecuta las pruebas de los hooks
+de permisos de los agentes cuando cambia `.claude/hooks/`.
+
+El ruleset `proteger-main` exige pull request y los checks `cambios`, `backend`
+y `frontend` para fusionar a `main`.
 
 ---
 
