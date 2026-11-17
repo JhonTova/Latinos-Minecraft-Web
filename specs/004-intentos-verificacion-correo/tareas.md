@@ -7,9 +7,9 @@ rojo va antes que el código. El backend va antes que el frontend, porque la
 pantalla consume la propiedad nueva.
 
 - [x] T1 · `analista` · Mapa del cambio en `plan.md`. Se comprueba con la sección «Mapa del cambio».
-- [ ] T2 · `pruebas-backend` · `EmailVerificationServiceTest` (CA-1, CA-2, CA-5 a CA-8) y `ManejadorDeErroresTest` (CA-1, CA-2, CA-4), en rojo. Se comprueba con `cd backend && mvn -B -pl app -am test`: deben fallar por la ausencia de `IntentoRechazadoException` o de `intentosRestantes`. Las de los límites que ya se cumplen hoy (CA-5, CA-7, CA-8) pasan desde el principio, y hay que decirlo así.
-- [ ] T3 · `pruebas-backend` · `EmailVerificationServiceTransaccionTest` (CA-3), en rojo. Se comprueba con `cd backend && mvn -B -pl identity -am test`: debe fallar porque hoy hay `rollback` y no `commit`.
-- [ ] T4 · `orquestador` · Commit `test(identity): ...` con T2 y T3.
+- [x] T2 · `pruebas-backend` · `EmailVerificationServiceTest` (CA-1, CA-2, CA-5 a CA-8) y `ManejadorDeErroresTest` (CA-1, CA-2, CA-4), en rojo. Se comprueba con `cd backend && mvn -B -pl app -am test`: deben fallar por la ausencia de `IntentoRechazadoException` o de `intentosRestantes`. Las de los límites que ya se cumplen hoy (CA-5, CA-7, CA-8) pasan desde el principio, y hay que decirlo así.
+- [x] T3 · `pruebas-backend` · `EmailVerificationServiceTransaccionTest` (CA-3), en rojo. Se comprueba con `cd backend && mvn -B -pl identity -am test`: debe fallar porque hoy hay `rollback` y no `commit`.
+- [x] T4 · `orquestador` · Commit `test(identity): ...` con T2 y T3.
 - [ ] T5 · `dev-backend` · `IntentoRechazadoException`, `noRollbackFor` y el manejador en `ManejadorDeErrores` (D1 a D4). Se comprueba con `mvn -B -f backend/pom.xml verify` en verde, incluido `ArquitecturaTest`, y con la cobertura de identity medida.
 - [ ] T6 · `pruebas-frontend` · `intentos-de-verificacion.test.ts` (CA-9 a CA-13), en rojo. Se comprueba con `cd frontend && npm run test`: debe fallar porque el módulo no existe.
 - [ ] T7 · `orquestador` · Commit `test(frontend): ...`.
@@ -25,8 +25,9 @@ Salida real de los comandos, pegada al cerrar la spec.
 
 | Qué | Comando | Resultado |
 |---|---|---|
-| Rojo backend | | |
-| Rojo frontend | | |
+| Rojo backend, fase 1 | `cd backend && mvn -B -pl identity -am test` | `Tests run: 43, Failures: 1, Errors: 0`. Falla `EmailVerificationServiceTransaccionTest.codigoIncorrectoHaceCommitYNoRollback`: `Wanted but not invoked: platformTransactionManager.commit(...)`; hubo `getTransaction` y `rollback(...)` desde `TransactionAspectSupport.completeTransactionAfterThrowing`. Confirma el fallo de seguridad. El control `caducadoHaceRollback` pasa, y CA-5, CA-7, CA-8 y el correcto con 4 fallos (CA-6) pasan desde hoy. |
+| Rojo backend, fase 2 | `cd backend && mvn -B -pl app -am test` | `testCompile` falla en `identity`: 7 × `cannot find symbol: class IntentoRechazadoException` en `EmailVerificationServiceTest.java`. `app` queda `SKIPPED`. |
+| Rojo frontend | `cd frontend && npm run test` | `FAIL src/lib/intentos-de-verificacion.test.ts`: `Cannot find module './intentos-de-verificacion'`. `Test Files 1 failed \| 3 passed (4)`, `Tests 110 passed (110)`. Es un rojo por módulo ausente, no por aserción. |
 | Verde backend | | |
 | Verde frontend | | |
 | Cobertura identity | | |

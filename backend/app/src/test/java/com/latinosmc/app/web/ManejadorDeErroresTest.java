@@ -2,7 +2,9 @@ package com.latinosmc.app.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.latinosmc.identity.EmailVerificationService;
 import com.latinosmc.shared.DomainException;
+import com.latinosmc.voting.CastVoteService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -126,6 +128,88 @@ class ManejadorDeErroresTest {
 
             assertThat(problema.getDetail()).doesNotContain("secreto");
             assertThat(problema.getDetail()).doesNotContain("postgresql");
+        }
+    }
+
+    @Nested
+    @DisplayName("Intentos de verificacion (spec 004)")
+    class IntentosDeVerificacion {
+
+        @Test
+        @DisplayName("un codigo incorrecto lleva intentosRestantes como entero")
+        void intentoRechazadoLlevaIntentosRestantesEntero() {
+            var problema = manejador.intentoRechazado(new EmailVerificationService.IntentoRechazadoException(
+                    "verification.invalid_code", "El codigo no es correcto.", 3));
+
+            assertThat(estadoDe(problema)).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(problema.getTitle()).isEqualTo("verification.invalid_code");
+            assertThat(problema.getType().toString()).endsWith("/verification.invalid_code");
+            assertThat(problema.getProperties()).containsKey("intentosRestantes");
+            assertThat(problema.getProperties().get("intentosRestantes")).isInstanceOf(Integer.class).isEqualTo(3);
+        }
+
+        @Test
+        @DisplayName("los intentos agotados llevan cero, tambien como entero")
+        void intentosAgotadosLlevaCero() {
+            var problema = manejador.intentoRechazado(new EmailVerificationService.IntentoRechazadoException(
+                    "verification.too_many_attempts", "Demasiados intentos fallidos.", 0));
+
+            assertThat(estadoDe(problema)).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(problema.getTitle()).isEqualTo("verification.too_many_attempts");
+            assertThat(problema.getType().toString()).endsWith("/verification.too_many_attempts");
+            assertThat(problema.getProperties().get("intentosRestantes")).isInstanceOf(Integer.class).isEqualTo(0);
+        }
+    }
+
+    @Nested
+    @DisplayName("Otras respuestas no cambian (CA-4)")
+    class SinCambios {
+
+        private boolean tienePropiedad(org.springframework.http.ProblemDetail problema, String nombre) {
+            return problema.getProperties() != null && problema.getProperties().containsKey(nombre);
+        }
+
+        @Test
+        @DisplayName("un conflicto generico no lleva intentosRestantes")
+        void conflictoGenericoSinIntentosRestantes() {
+            var problema = manejador.conflicto(
+                    new DomainException.Conflict("verification.expired", "El codigo ha caducado."));
+
+            assertThat(estadoDe(problema)).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(problema.getTitle()).isEqualTo("verification.expired");
+            assertThat(tienePropiedad(problema, "intentosRestantes")).isFalse();
+        }
+
+        @Test
+        @DisplayName("la ventana abierta sigue llevando segundosRestantes y nada de intentos")
+        void ventanaAbiertaMantieneSegundosRestantes() {
+            var problema = manejador.ventanaAbierta(
+                    new CastVoteService.VentanaAbiertaException(java.time.Duration.ofSeconds(90)));
+
+            assertThat(problema.getTitle()).isEqualTo("vote.window.open");
+            assertThat(problema.getProperties().get("segundosRestantes")).isEqualTo(90L);
+            assertThat(tienePropiedad(problema, "intentosRestantes")).isFalse();
+        }
+
+        @Test
+        @DisplayName("el voto diario consumido sigue llevando segundosRestantes")
+        void votoDiarioMantieneSegundosRestantes() {
+            var problema = manejador.votoDiarioConsumido(
+                    new CastVoteService.VotoDiarioConsumidoException(java.time.Duration.ofMinutes(2)));
+
+            assertThat(problema.getTitle()).isEqualTo("vote.daily.used");
+            assertThat(problema.getProperties().get("segundosRestantes")).isEqualTo(120L);
+            assertThat(tienePropiedad(problema, "intentosRestantes")).isFalse();
+        }
+
+        @Test
+        @DisplayName("el cupo de IP agotado sigue llevando limitePorConexion")
+        void cupoDeIpMantieneLimite() {
+            var problema = manejador.cupoDeIpAgotado(new CastVoteService.CupoDeIpAgotadoException(3));
+
+            assertThat(problema.getTitle()).isEqualTo("vote.ip.quota");
+            assertThat(problema.getProperties().get("limitePorConexion")).isEqualTo(3);
+            assertThat(tienePropiedad(problema, "intentosRestantes")).isFalse();
         }
     }
 
