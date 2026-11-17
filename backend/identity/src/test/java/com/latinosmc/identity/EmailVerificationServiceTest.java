@@ -233,7 +233,7 @@ class EmailVerificationServiceTest {
                     .isInstanceOf(EmailVerificationService.IntentoRechazadoException.class)
                     .satisfies(e -> assertThat(((EmailVerificationService.IntentoRechazadoException) e)
                                     .intentosRestantes())
-                            .isEqualTo(2));
+                            .isEqualTo(3));
 
             verify(repositorio).sumarIntento(CODIGO_ID);
         }
