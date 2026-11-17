@@ -89,7 +89,7 @@ jobs:
       - name: Probar la politica de permisos de los agentes
         run: |
           git branch --force main origin/main 2>/dev/null || true
-          node --test .claude/hooks/
+          node --test .claude/hooks/*.test.mjs
 
   backend:
     needs: cambios
