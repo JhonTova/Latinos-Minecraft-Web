@@ -111,8 +111,28 @@ const COMANDOS = {
   "pruebas-frontend": [/^npm (run )?test( -- [A-Za-z0-9 ._/=-]+)?$/],
   "dev-frontend": [/^npm ci$/, /^npm run (lint|build)$/, /^npm (run )?test( -- [A-Za-z0-9 ._/=-]+)?$/],
   "verificador-ui": [/^npm ci$/, /^npm run (build|start|dev)( -- [A-Za-z0-9 ._/=-]+)?$/],
-  revisor: [/^npm run lint$/, /^npm (run )?test$/],
+  // El build está para que el revisor no dependa del informe de dev-frontend
+  // (specs 002 y 004). `dev` y `start` no: el revisor no mira la pantalla.
+  revisor: [/^npm run (lint|build)$/, /^npm (run )?test$/],
 };
+
+/** Forma de comando que sí pasa, para cada error que se repitió en las specs. */
+const FORMA_VALIDA_CD =
+  "cd solo admite backend, frontend o .., con ruta relativa y en la misma llamada que el comando: " +
+  "`cd backend && mvn -B -pl voting -am test`, `cd frontend && npm run test` (cada llamada empieza en la raíz)";
+
+/**
+ * Pista que acompaña a un rechazo. El motivo solo decía qué se bloqueó, y los
+ * subagentes probaban variantes del mismo comando (specs 001 a 004).
+ */
+function pista(segmento) {
+  if (/^cd\b/.test(segmento)) return FORMA_VALIDA_CD;
+  if (/^git -C\b/.test(segmento)) return "usa `git` sin `-C`: la sesión ya está en la raíz del repositorio";
+  if (/^(ls|cat|head|tail|grep|find|dir|type|sed|awk|wc)\b/.test(segmento)) {
+    return "para listar, leer o buscar usa las herramientas Read, Grep o Glob; la salida de un comando ya llega completa, sin `| tail`";
+  }
+  return "si lo necesitas para tu tarea, dilo en tu informe; no busques otro camino";
+}
 
 /**
  * Parte una línea de comandos en sus segmentos (`a && b; c | d`), respetando
@@ -205,7 +225,9 @@ export function puedeEjecutar(rol, linea) {
   if (partes === null) {
     return {
       ok: false,
-      motivo: "el comando usa sustitución ($(...), `...`), redirecciones o comillas sin cerrar; escríbelo sin ellas",
+      motivo:
+        "el comando usa sustitución ($(...), `...`), redirecciones o comillas sin cerrar; escríbelo sin ellas. " +
+        "La salida ya llega completa: quita `2>&1`, `> archivo` y `| tail`",
     };
   }
   if (partes.length === 0) {
@@ -220,7 +242,7 @@ export function puedeEjecutar(rol, linea) {
       propios.some((p) => p.test(segmento)) ||
       (/^mvn(\.cmd)? /.test(segmento) && mavenPermitido(rol, segmento));
     if (!permitido) {
-      return { ok: false, motivo: `el rol '${rol}' no puede ejecutar: ${segmento}` };
+      return { ok: false, motivo: `el rol '${rol}' no puede ejecutar: ${segmento}. ${pista(segmento)}` };
     }
   }
   return { ok: true };
