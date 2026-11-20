@@ -64,7 +64,7 @@ indica, y A = 2026-08-03T12:00Z con `Clock.fixed`.
 | CA-7 | `carreraConAceptadoAplicaLaFormula`, `carreraUsaLaVentanaVigente`, `carreraConRechazadoDevuelveNull` | 18 h, 42 h, `null`; sin recompensa ni evento |
 | CA-8 | `votoNuevoAceptadoSigueDevolviendoLaVentana`, `votoNuevoRechazadoSigueDevolviendoNull`, `VoteControllerTest › votoNuevoDevuelve201YLaVentana` y las pruebas de `409` que ya existían | 24 h; `null`; `201` con `86400` |
 | CA-9 | `creadoEnElFuturoNoSuperaLaVentana` | 24 h, no 25 h |
-| CA-10 | `git diff --stat main...HEAD`: 6 archivos (`CastVoteService.java`, dos clases de prueba y tres documentos de la spec) | Sin cambios en plugin, migraciones, ledger, `frontend/` ni `pom.xml` |
+| CA-10 | `git diff --stat main...HEAD`: 6 archivos (`CastVoteService.java`, dos clases de prueba y tres documentos de la spec) | Sin cambios en plugin, migraciones, ledger ni `frontend/`; el único `pom.xml` tocado es el suelo de `voting`, en su commit propio |
 
 ## Evidencia
 
@@ -78,8 +78,9 @@ indica, y A = 2026-08-03T12:00Z con `Clock.fixed`.
   - `app`: Tests run: 118, Failures: 0, Errors: 0, Skipped: 0, incluidos
     `VoteControllerTest` (3) y `ArquitecturaTest` (4).
 - **Cobertura de líneas de `voting`** (JaCoCo, BUNDLE): **147/346 = 42,49 %**.
-  El suelo actual es 0.40. La cobertura de `main` no se midió.
-  `cobertura.suelo` se sube en un commit aparte de esta rama.
+  La cobertura de `main` no se midió. `cobertura.suelo` de `voting` pasó
+  de 0.40 a 0.42 en un commit `build(voting)` aparte, hecho por la persona
+  (ningún agente puede editar `pom.xml`).
 - **Mutación**, con `cd backend && mvn -B -Pmutacion -pl voting -am verify`:
   - En `voting`: 114 mutantes, 68 muertos, 2 supervivientes y 44 sin
     cobertura. Fuerza: 97 %.
@@ -103,5 +104,6 @@ indica, y A = 2026-08-03T12:00Z con `Clock.fixed`.
 4. `test(voting)`: pruebas de los hallazgos del revisor (ventana de 48 h,
    `verifyNoMoreInteractions` y CA-8).
 5. `docs(specs)`: cierre con evidencia y descripción del pull request.
+6. `build(voting)`: suelo de cobertura de 0.40 a 0.42.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
