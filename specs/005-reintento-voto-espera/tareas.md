@@ -23,12 +23,12 @@ rojo va antes que el código.
   - Se comprueba con `cd backend && mvn -B -pl app -am test -Dtest=VoteControllerTest -Dsurefire.failIfNoSpecifiedTests=false`.
   - Puede pasar ya: fija la conversión a segundos, que no cambia.
 - [x] T5 · `orquestador` · Commit `test(voting): ...` con T3 y T4.
-- [ ] T6 · `dev-backend` · `CastVoteService`: paso 1, paso 7 y
+- [x] T6 · `dev-backend` · `CastVoteService`: paso 1, paso 7 y
   `Resultado.repetido` (D1 a D6).
   - Se comprueba con `mvn -B -f backend/pom.xml verify` en verde, incluida
     `ArquitecturaTest`.
   - Se anota la cobertura de `voting` medida por JaCoCo.
-- [ ] T7 · `orquestador` · Commit `feat(voting): ...`.
+- [x] T7 · `orquestador` · Commit `feat(voting): ...`.
 - [ ] T8 · `revisor` · Revisión del diff completo de la rama y mutación con
   `cd backend && mvn -B -Pmutacion -pl voting -am verify`.
   - Se clasifican aquí los mutantes supervivientes de `CastVoteService`.

@@ -128,7 +128,13 @@ public class CastVoteService {
         var yaExiste = repositorio.buscarPorClaveIdempotencia(claveIdempotencia);
         if (yaExiste.isPresent()) {
             log.debug("Voto idempotente reutilizado: {}", claveIdempotencia);
-            return Resultado.repetido(yaExiste.get());
+            var previo = yaExiste.get();
+            // Solo un voto aceptado tiene espera; en los demas estados no se
+            // consulta la ventana.
+            Duration espera = previo.estado() == VoteStatus.ACCEPTED
+                    ? restante(previo, Instant.now(reloj), ajustes.actuales().ventana())
+                    : null;
+            return Resultado.repetido(previo, espera);
         }
 
         var servidor = directorio
@@ -217,7 +223,9 @@ public class CastVoteService {
         if (!creado) {
             return repositorio
                     .buscarPorClaveIdempotencia(claveIdempotencia)
-                    .map(Resultado::repetido)
+                    .map(previo -> Resultado.repetido(
+                            previo,
+                            previo.estado() == VoteStatus.ACCEPTED ? restante(previo, ahora, reglas.ventana()) : null))
                     .orElseThrow(() ->
                             new IllegalStateException("Conflicto de idempotencia sin fila asociada: " + claveIdempotencia));
         }
@@ -239,9 +247,26 @@ public class CastVoteService {
     }
 
     /**
+     * Espera que le queda a un voto aceptado en un reintento. Ventana semiabierta
+     * (ADR-0011): en {@code creadoEn + V} exacto ya es cero, nunca negativo. Se
+     * topa en {@code V} para que un desfase de reloj entre instancias no prometa
+     * mas que la ventana vigente (ADR-0023).
+     */
+    private static Duration restante(Vote voto, Instant ahora, Duration ventana) {
+        Duration transcurrido = Duration.between(voto.creadoEn(), ahora);
+        Duration falta = ventana.minus(transcurrido);
+        if (falta.isNegative()) {
+            return Duration.ZERO;
+        }
+        return falta.compareTo(ventana) > 0 ? ventana : falta;
+    }
+
+    /**
      * @param voto el voto resultante
      * @param yaExistia si vino de un reintento con la misma clave de idempotencia
-     * @param proximoVotoEn cuanto falta para poder volver a votar; null si se rechazo
+     * @param proximoVotoEn cuanto falta para poder volver a votar; en un reintento
+     *     de un voto aceptado es lo que resta de la ventana; null si el voto no
+     *     fue aceptado
      */
     public record Resultado(Vote voto, boolean yaExistia, Duration proximoVotoEn) {
 
@@ -253,8 +278,8 @@ public class CastVoteService {
             return new Resultado(voto, false, null);
         }
 
-        static Resultado repetido(Vote voto) {
-            return new Resultado(voto, true, null);
+        static Resultado repetido(Vote voto, Duration espera) {
+            return new Resultado(voto, true, espera);
         }
     }
 
