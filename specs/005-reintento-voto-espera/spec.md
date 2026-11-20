@@ -1,6 +1,6 @@
 # Spec 005 — El reintento de un voto aceptado dice cuánto falta para el próximo
 
-- **Estado:** Aprobada el 19/11/2026, con las respuestas P-1 a P-6 de [plan.md](plan.md)
+- **Estado:** Implementada. Quedan pendientes la subida de `cobertura.suelo` y la fusión. Se aprobó el 19/11/2026, con las respuestas P-1 a P-6 de [plan.md](plan.md).
 - **Rama:** `feat/005-reintento-voto-espera`
 - **Parte:** backend
 - **Riesgo:** 🔴 crítico (`voting`: ventana e idempotencia, ver `backend/AGENTS.md`)

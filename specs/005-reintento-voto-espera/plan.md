@@ -92,6 +92,9 @@ del voto simulado.
 | CA-7 | `carreraConRechazadoDevuelveNull` | `A − 6 h` | `null` | unitaria |
 | CA-8 | Pruebas existentes de voto nuevo y de `409` (`CastVoteServiceTest`) + `votoNuevoAceptadoSigueDevolviendoLaVentana` | — | `24 h`, `yaExistia=false` | regresión |
 | CA-9 | `creadoEnElFuturoNoSuperaLaVentana` | `A + 1 h` | `24 h` (no `25 h`) | borde |
+| CA-1 / D2 | `reintentoUsaLaVentanaVigente` (añadida en la revisión, V = 48 h) | `A − 6 h` | `42 h` (con 24 h fijas saldría 18 h) | unitaria |
+| CA-7 / D2 | `carreraUsaLaVentanaVigente` (añadida en la revisión, V = 48 h) | `A − 6 h` | `42 h` | unitaria |
+| CA-8 | `votoNuevoRechazadoSigueDevolviendoNull` y `VoteControllerTest › votoNuevoDevuelve201YLaVentana` (añadidas en la revisión) | — | `null` / `201`, `86400` | regresión |
 | CA-10 | Revisión del diff por el `revisor` + `mvn -B -f backend/pom.xml verify` + `git diff --stat main` | — | Sin cambios en `plugin`, migraciones, ledger, `frontend/` ni `pom.xml` | revisión |
 
 Mutación (ADR-0032): `mvn -B -Pmutacion -pl voting -am verify`. Se clasifican
