@@ -56,7 +56,7 @@ aviso de intentos va en el mismo PR.
 | CA-7 60 s entre envíos | `› EsperaEntreEnvios › a59sRechaza`, `› a0sRechaza`, `› a60sExactosEnvia`, `› aMasDe60sEnvia`, `› sinEnvioPrevioEnvia` |
 | CA-8 camino feliz y normalización | `› CaminoFeliz › conEspacios`, `› conGuion`, `› marcaConEmailDelCodigoYRelojInyectado`, `› codigoDeSeisDigitosEnElCorreoYSoloSuHashGuardado` |
 | CA-9 a CA-11 textos | `intentos-de-verificacion.test.ts › textoDeIntentos` (plural y singular; cero y negativos; valores no enteros) |
-| CA-12 y CA-13 aviso en la pantalla | `intentos-de-verificacion.test.ts › avisoDeVerificacion`. **Sin verificación visual** (ver abajo). |
+| CA-12 y CA-13 aviso en la pantalla | `intentos-de-verificacion.test.ts › avisoDeVerificacion`, y verificación visual con backend simulado (ver «Evidencia»). |
 | CA-14 sin plugin, migraciones, `pom.xml` ni `package.json`; límites intactos | Revisión del diff y los comandos de abajo |
 
 ## Evidencia
@@ -87,9 +87,17 @@ aviso de intentos va en el mismo PR.
   - El único superviviente del módulo está en `AuthService.registrar:55`, que
     esta rama no toca.
 - **Cobertura de líneas de `identity`** (JaCoCo, LINE): **106/419 = 0,253**,
-  frente a unos 0,157 antes. `cobertura.suelo` sigue en 0,15 en
-  `backend/identity/pom.xml`. **Hay que subirlo (propuesto: 0,25) en un commit
-  de este mismo PR (ADR-0032).** Ningún rol del arnés puede editar `pom.xml`.
+  frente a unos 0,157 antes. `cobertura.suelo` pasa de 0,15 a **0,25** en
+  `backend/identity/pom.xml`, en el commit `build(identity)` de este PR
+  (ADR-0032), porque ningún rol del arnés puede editar `pom.xml`.
+- **Verificación visual** (después del cierre, fuera del sistema de agentes):
+  `next dev` de esta rama contra un backend simulado y Playwright, con
+  [capturas y textos](https://github.com/JhonTova/Latinos-Minecraft-Web/tree/main/specs/004-intentos-verificacion-correo/evidencia).
+  - Móvil, tema claro: «Te quedan 2 intentos.», «Te queda 1 intento.», «No te
+    quedan intentos. Pide un código nuevo…», sin el dato solo «El código no es
+    correcto.», `too_many_attempts`, error `500` y backend sin conexión
+    («No hay conexión con el servidor.»). Todos en `role="alert"`.
+  - Escritorio, tema oscuro: 2 y 0 intentos, con los mismos textos.
 
 ## Lo que este PR no demuestra
 
@@ -97,11 +105,11 @@ aviso de intentos va en el mismo PR.
   demuestra que el proxy transaccional de Spring hace `commit` y no `rollback`,
   con un gestor de transacciones simulado. Que la fila quede escrita depende de
   la base de datos, y las pruebas del backend no usan ninguna (ADR-0021).
-- **Falta la verificación visual de CA-12 y CA-13.** `verificador-ui` no tiene
-  navegador en este entorno y el hook le bloquea las peticiones HTTP. **Hay que
-  revisar `/panel/verificar` en el navegador antes de fusionar:** móvil y
-  escritorio, tema claro y oscuro, con un código incorrecto (2, 1 y 0
-  intentos), `too_many_attempts` y un error genérico.
+- **La verificación visual de CA-12 y CA-13 se hizo contra un backend
+  simulado, no contra el real.** `verificador-ui` no tiene navegador en este
+  entorno, así que la hizo después del cierre la sesión que lanzó al
+  orquestador. No se miraron escritorio claro, móvil oscuro, contraste ni el
+  navegador sin red (ver «Verificación visual» arriba).
 
 ## Riesgos conocidos (fuera de alcance)
 
