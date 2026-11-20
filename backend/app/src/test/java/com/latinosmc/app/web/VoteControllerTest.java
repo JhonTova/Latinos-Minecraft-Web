@@ -74,6 +74,22 @@ class VoteControllerTest {
     }
 
     @Test
+    @DisplayName("CA-8: un voto nuevo responde 201 con la ventana entera en segundos")
+    void votoNuevoDevuelve201YLaVentana() {
+        var aceptado = voto(VoteStatus.ACCEPTED);
+        when(servicio.votar(anyString(), any(), anyString(), anyString()))
+                .thenReturn(new CastVoteService.Resultado(aceptado, false, Duration.ofHours(24)));
+
+        var respuesta = controlador.votar("craftlatino", peticion(), "clave-nueva", peticionHttp);
+
+        assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(respuesta.getBody()).isNotNull();
+        assertThat(respuesta.getBody().votoId()).isEqualTo(aceptado.id());
+        assertThat(respuesta.getBody().yaExistia()).isFalse();
+        assertThat(respuesta.getBody().segundosHastaProximoVoto()).isEqualTo(86400L);
+    }
+
+    @Test
     @DisplayName("CA-5: el reintento de un voto rechazado responde 200 sin segundos")
     void reintentoRechazadoDevuelveNull() {
         var rechazado = voto(VoteStatus.REJECTED);

@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.latinosmc.shared.DomainException;
@@ -386,6 +387,9 @@ class CastVoteServiceTest {
             verify(repositorio, never()).insertar(any(), anyString(), any(), anyString());
             verify(repositorio, never()).guardarSenales(any(), anyList());
             verify(repositorio, never()).crearRecompensaPendiente(any(), any(), anyString());
+            // Cualquier escritura o lectura nueva del repositorio en el reintento rompe la prueba.
+            verify(repositorio).buscarPorClaveIdempotencia(CLAVE);
+            verifyNoMoreInteractions(repositorio);
         }
 
         @Test
@@ -434,6 +438,49 @@ class CastVoteServiceTest {
             assertThat(resultado.yaExistia()).isFalse();
             assertThat(resultado.voto().estado()).isEqualTo(VoteStatus.ACCEPTED);
             assertThat(resultado.proximoVotoEn()).isEqualTo(Duration.ofHours(24));
+        }
+
+        @Test
+        @DisplayName("CA-8: un voto nuevo rechazado sigue devolviendo yaExistia false y null")
+        void votoNuevoRechazadoSigueDevolviendoNull() {
+            when(antifraude.evaluar(any()))
+                    .thenReturn(TrustEngine.Veredicto.rechazar(
+                            95,
+                            "fraud.risk_too_high",
+                            List.of(new TrustEngine.Senal("IP_BURST", 50, "demasiados"))));
+
+            var resultado = servicio.votar(SLUG, steve, "1.2.3.4", "clave-nueva-rechazada");
+
+            assertThat(resultado.voto().estado()).isEqualTo(VoteStatus.REJECTED);
+            assertThat(resultado.yaExistia()).isFalse();
+            assertThat(resultado.proximoVotoEn()).isNull();
+        }
+
+        /** V = 48 h, A - C = 6 h: min(48, max(0, 48 - 6)) = 42 h. Con 24 fijas daria 18 h. */
+        @Test
+        @DisplayName("CA-1 y D2: el reintento usa la ventana vigente (48 h), no 24 fijas")
+        void reintentoUsaLaVentanaVigente() {
+            when(ajustes.actuales()).thenReturn(new VoteSettings(false, 50, Duration.ofHours(48)));
+            var existente = voto(VoteStatus.ACCEPTED, AHORA.minus(Duration.ofHours(6)));
+
+            assertRepetidoAceptadoCon(existente, Duration.ofHours(42));
+        }
+
+        @Test
+        @DisplayName("CA-7 y D2: la carrera usa la ventana vigente (48 h), no 24 fijas")
+        void carreraUsaLaVentanaVigente() {
+            when(ajustes.actuales()).thenReturn(new VoteSettings(false, 50, Duration.ofHours(48)));
+            var ganador = voto(VoteStatus.ACCEPTED, AHORA.minus(Duration.ofHours(6)));
+            when(repositorio.insertar(any(), eq(CLAVE), any(), anyString())).thenReturn(false);
+            when(repositorio.buscarPorClaveIdempotencia(CLAVE))
+                    .thenReturn(Optional.empty())
+                    .thenReturn(Optional.of(ganador));
+
+            var resultado = servicio.votar(SLUG, steve, "1.2.3.4", CLAVE);
+
+            assertThat(resultado.voto()).isSameAs(ganador);
+            assertThat(resultado.yaExistia()).isTrue();
+            assertThat(resultado.proximoVotoEn()).isEqualTo(Duration.ofHours(42));
         }
 
         @Test
