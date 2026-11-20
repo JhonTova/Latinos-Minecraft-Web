@@ -1,0 +1,56 @@
+{
+ "movil-claro/2-intentos": {
+  "alert": [
+   "!\nEl código no es correcto. Te quedan 2 intentos."
+  ],
+  "texto_main": "ta que se creen cuentas falsas para inflar el ranking.\n\n!\nEl código no es correcto. Te quedan 2 intentos.\nCódigo de 6 dígitos\n\nLo enviamos a jugador@ejemplo.com. Caduca en 15 minutos.\n\nVerificar\nNo me ha llegado, enviar otro\n\nRevisa también la carpeta de spam."
+ },
+ "movil-claro/1-intento": {
+  "alert": [
+   "!\nEl código no es correcto. Te queda 1 intento."
+  ],
+  "texto_main": "vita que se creen cuentas falsas para inflar el ranking.\n\n!\nEl código no es correcto. Te queda 1 intento.\nCódigo de 6 dígitos\n\nLo enviamos a jugador@ejemplo.com. Caduca en 15 minutos.\n\nVerificar\nNo me ha llegado, enviar otro\n\nRevisa también la carpeta de spam."
+ },
+ "movil-claro/0-intentos": {
+  "alert": [
+   "!\nEl código no es correcto. No te quedan intentos. Pide un código nuevo con «No me ha llegado, enviar otro»."
+  ],
+  "texto_main": "l código no es correcto. No te quedan intentos. Pide un código nuevo con «No me ha llegado, enviar otro».\nCódigo de 6 dígitos\n\nLo enviamos a jugador@ejemplo.com. Caduca en 15 minutos.\n\nVerificar\nNo me ha llegado, enviar otro\n\nRevisa también la carpeta de spam."
+ },
+ "movil-claro/sin-dato": {
+  "alert": [
+   "!\nEl código no es correcto."
+  ],
+  "texto_main": " correo\n\nEs lo que evita que se creen cuentas falsas para inflar el ranking.\n\n!\nEl código no es correcto.\nCódigo de 6 dígitos\n\nLo enviamos a jugador@ejemplo.com. Caduca en 15 minutos.\n\nVerificar\nNo me ha llegado, enviar otro\n\nRevisa también la carpeta de spam."
+ },
+ "movil-claro/too-many": {
+  "alert": [
+   "!\nNo te quedan intentos. Pide un código nuevo con «No me ha llegado, enviar otro»."
+  ],
+  "texto_main": "ra inflar el ranking.\n\n!\nNo te quedan intentos. Pide un código nuevo con «No me ha llegado, enviar otro».\nCódigo de 6 dígitos\n\nLo enviamos a jugador@ejemplo.com. Caduca en 15 minutos.\n\nVerificar\nNo me ha llegado, enviar otro\n\nRevisa también la carpeta de spam."
+ },
+ "movil-claro/error-generico": {
+  "alert": [
+   "!\nAlgo falló en el servidor"
+  ],
+  "texto_main": " correo\n\nEs lo que evita que se creen cuentas falsas para inflar el ranking.\n\n!\nAlgo falló en el servidor\nCódigo de 6 dígitos\n\nLo enviamos a jugador@ejemplo.com. Caduca en 15 minutos.\n\nVerificar\nNo me ha llegado, enviar otro\n\nRevisa también la carpeta de spam."
+ },
+ "movil-claro/fallo-red": {
+  "alert": [
+   "!\nNo hay conexión con el servidor."
+  ],
+  "texto_main": "\n\nEs lo que evita que se creen cuentas falsas para inflar el ranking.\n\n!\nNo hay conexión con el servidor.\nCódigo de 6 dígitos\n\nLo enviamos a jugador@ejemplo.com. Caduca en 15 minutos.\n\nVerificar\nNo me ha llegado, enviar otro\n\nRevisa también la carpeta de spam."
+ },
+ "escritorio-oscuro/2-intentos": {
+  "alert": [
+   "!\nEl código no es correcto. Te quedan 2 intentos."
+  ],
+  "texto_main": "ta que se creen cuentas falsas para inflar el ranking.\n\n!\nEl código no es correcto. Te quedan 2 intentos.\nCódigo de 6 dígitos\n\nLo enviamos a jugador@ejemplo.com. Caduca en 15 minutos.\n\nVerificar\nNo me ha llegado, enviar otro\n\nRevisa también la carpeta de spam."
+ },
+ "escritorio-oscuro/0-intentos": {
+  "alert": [
+   "!\nEl código no es correcto. No te quedan intentos. Pide un código nuevo con «No me ha llegado, enviar otro»."
+  ],
+  "texto_main": "l código no es correcto. No te quedan intentos. Pide un código nuevo con «No me ha llegado, enviar otro».\nCódigo de 6 dígitos\n\nLo enviamos a jugador@ejemplo.com. Caduca en 15 minutos.\n\nVerificar\nNo me ha llegado, enviar otro\n\nRevisa también la carpeta de spam."
+ }
+}

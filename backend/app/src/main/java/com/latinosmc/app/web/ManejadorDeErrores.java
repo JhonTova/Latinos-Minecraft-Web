@@ -63,6 +63,20 @@ public class ManejadorDeErrores {
         return problema;
     }
 
+    /**
+     * Codigo de verificacion rechazado.
+     *
+     * <p>Lleva los intentos que quedan: la web avisa de cuantos le quedan al
+     * usuario en vez de sorprenderlo con el bloqueo al quinto fallo.
+     */
+    @ExceptionHandler(com.latinosmc.identity.EmailVerificationService.IntentoRechazadoException.class)
+    public ProblemDetail intentoRechazado(
+            com.latinosmc.identity.EmailVerificationService.IntentoRechazadoException e) {
+        ProblemDetail problema = crear(HttpStatus.CONFLICT, e.code(), e.getMessage());
+        problema.setProperty("intentosRestantes", e.intentosRestantes());
+        return problema;
+    }
+
     /** Falta sesion. 401 y no 403: el problema es que no sabemos quien eres. */
     @ExceptionHandler(UsuarioActualResolver.NoAutenticado.class)
     public ProblemDetail noAutenticado(UsuarioActualResolver.NoAutenticado e) {
