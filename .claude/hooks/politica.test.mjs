@@ -168,6 +168,9 @@ describe("puedeEjecutar", () => {
     si(puedeEjecutar("revisor", "mvn -B -pl voting -am -P mutacion org.pitest:pitest-maven:mutationCoverage"));
     si(puedeEjecutar("revisor", "mvn -B -P mutacion -pl voting -am verify"));
     si(puedeEjecutar("revisor", "npm run lint"));
+    // En las specs 002 y 004 el revisor no pudo repetir el build del frontend.
+    si(puedeEjecutar("revisor", "cd frontend && npm run build"));
+    no(puedeEjecutar("revisor", "npm run dev"));
     no(puedeEjecutar("revisor", "git commit -m x"));
     no(puedeEjecutar("revisor", "git checkout -- ."));
     no(puedeEjecutar("revisor", "mvn -B install"));
@@ -193,6 +196,35 @@ describe("puedeEjecutar", () => {
     no(puedeEjecutar("orquestador", "gh pr create --admin"));
     no(puedeEjecutar("orquestador", "mvn -B verify"));
     no(puedeEjecutar("orquestador", "npm run build"));
+  });
+
+  // Lo observado en las specs 001 a 004: los subagentes repetían variantes del
+  // mismo comando bloqueado porque el motivo no decía cuál era la forma válida.
+  describe("el motivo del rechazo dice qué forma sí pasa", () => {
+    const motivo = (rol, linea) => puedeEjecutar(rol, linea).motivo;
+
+    it("una redirección explica que la salida ya llega completa", () => {
+      assert.match(motivo("pruebas-backend", "cd backend && mvn -B test 2>&1"), /quita `2>&1`/);
+    });
+
+    it("una tubería a tail o un ls remite a las herramientas de lectura", () => {
+      assert.match(motivo("pruebas-backend", "cd backend && mvn -B test | tail -40"), /Read, Grep o Glob/);
+      assert.match(motivo("orquestador", "ls specs/"), /Glob/);
+    });
+
+    it("un cd que no pasa muestra la forma válida, en la misma llamada", () => {
+      const m = motivo("dev-frontend", "cd C:/repo/frontend");
+      assert.match(m, /cd frontend && npm run test/);
+      assert.match(m, /misma llamada/);
+    });
+
+    it("git -C remite a git sin -C", () => {
+      assert.match(motivo("revisor", "git -C backend log"), /sin `-C`/);
+    });
+
+    it("cualquier otro rechazo pide decirlo en el informe en vez de buscar otro camino", () => {
+      assert.match(motivo("verificador-ui", "curl http://localhost:3000"), /informe/);
+    });
   });
 
   it("un rol sin comandos propios solo puede leer el repositorio", () => {
