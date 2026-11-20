@@ -20,7 +20,7 @@ inventes otra estructura.
 
 ## Pasos
 
-1. **Número y rama.** Lista `specs/` y toma el mayor `NNN` más uno, con tres
+1. **Número y rama.** Lista `specs/` con `Glob` (`specs/*/spec.md`) y toma el mayor `NNN` más uno, con tres
    cifras. La rama se llama igual que la carpeta, con su tipo:
    `feat/NNN-nombre-corto`. Una spec, una rama, un pull request.
 2. **`spec.md`.** Escribe el problema con un caso concreto del producto. Cada
@@ -44,6 +44,23 @@ inventes otra estructura.
    implementación»: una diferencia sin explicar es un defecto.
 7. **Cierre.** Rellena en `tareas.md` la sección «Evidencia» con la salida real
    de los comandos. No escribas un resultado que no ejecutaste.
+
+## Si la spec solo fija comportamiento que ya existe
+
+Pasa cuando el objetivo es proteger con pruebas algo que ya funciona, sin
+cambiarlo (como la 001, que fijó los límites del antifraude). Ahí no hay
+código de producción que escribir, así que el orden TDD cambia:
+
+- **El rojo no es una prueba que falla**, porque la prueba nueva pasa desde el
+  primer momento. El rojo es la evidencia de que el comportamiento estaba sin
+  proteger: los mutantes que sobreviven *antes* de añadir la prueba (informe de
+  PIT copiado en «Evidencia», porque `target/` se sobrescribe).
+- **El verde** es el mismo informe *después*: esos mutantes muertos.
+- No hay `dev-backend` ni commit `feat(...)`/`fix(...)`: solo `docs(specs)` y
+  `test(...)`. Dilo así en `tareas.md`.
+- Para que el `revisor` reproduzca el rojo sin borrar la prueba nueva:
+  `mvn -B -Pmutacion -pl <módulo> -am verify -DexcludedTestClasses=<clase>`
+  (ver `docs/calidad/README.md`).
 
 ## Reglas
 
