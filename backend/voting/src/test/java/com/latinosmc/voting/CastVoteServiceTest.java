@@ -27,8 +27,11 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -259,6 +262,187 @@ class CastVoteServiceTest {
         assertThat(resultado.yaExistia()).isTrue();
         assertThat(resultado.voto().id()).isEqualTo(ganador.id());
         verify(publicador, never()).publish(any());
+    }
+
+    // --- Reintento idempotente: cuanto falta para el proximo voto (spec 005) ---
+
+    /**
+     * Un reintento con la misma clave devuelve el voto original y, si fue
+     * aceptado, cuanto le falta al jugador para poder volver a votar:
+     * {@code min(V, max(0, V - (ahora - creadoEn)))}. Con V = 24 h y ahora = AHORA.
+     */
+    @Nested
+    @DisplayName("Reintento idempotente")
+    class ReintentoIdempotente {
+
+        private static final String CLAVE = "clave-reintento";
+
+        private Vote voto(VoteStatus estado, Instant creadoEn) {
+            return new Vote(
+                    Ids.newId(),
+                    SERVIDOR_ID,
+                    estado,
+                    "OFFLINE_NAME",
+                    "Steve",
+                    new byte[] {1},
+                    5,
+                    estado == VoteStatus.REJECTED ? "fraud.risk_too_high" : null,
+                    creadoEn);
+        }
+
+        private CastVoteService.Resultado reintentoDe(Vote existente) {
+            when(repositorio.buscarPorClaveIdempotencia(CLAVE)).thenReturn(Optional.of(existente));
+            return servicio.votar(SLUG, steve, "1.2.3.4", CLAVE);
+        }
+
+        private void assertRepetidoAceptadoCon(Vote existente, Duration esperado) {
+            var resultado = reintentoDe(existente);
+
+            assertThat(resultado.voto()).isSameAs(existente);
+            assertThat(resultado.yaExistia()).isTrue();
+            assertThat(resultado.proximoVotoEn()).isEqualTo(esperado);
+        }
+
+        @Test
+        @DisplayName("CA-1: aceptado hace 6 h devuelve 18 h")
+        void aceptadoHaceSeisHorasDevuelveDieciocho() {
+            var existente = voto(VoteStatus.ACCEPTED, AHORA.minus(Duration.ofHours(6)));
+
+            assertRepetidoAceptadoCon(existente, Duration.ofHours(18));
+        }
+
+        @Test
+        @DisplayName("CA-2: aceptado en el mismo instante devuelve la ventana entera")
+        void aceptadoEnElMismoInstanteDevuelveLaVentana() {
+            var existente = voto(VoteStatus.ACCEPTED, AHORA);
+
+            assertRepetidoAceptadoCon(existente, Duration.ofHours(24));
+        }
+
+        @Test
+        @DisplayName("CA-3: un segundo antes de cerrar la ventana devuelve 1 s")
+        void unSegundoAntesDeCerrarDevuelveUnSegundo() {
+            var existente = voto(VoteStatus.ACCEPTED, AHORA.minus(Duration.ofHours(24)).plusSeconds(1));
+
+            assertRepetidoAceptadoCon(existente, Duration.ofSeconds(1));
+        }
+
+        @Test
+        @DisplayName("CA-3: justo al cerrar la ventana devuelve cero")
+        void justoAlCerrarLaVentanaDevuelveCero() {
+            var existente = voto(VoteStatus.ACCEPTED, AHORA.minus(Duration.ofHours(24)));
+
+            assertRepetidoAceptadoCon(existente, Duration.ZERO);
+        }
+
+        @Test
+        @DisplayName("CA-4: un segundo despues de cerrar la ventana devuelve cero")
+        void unSegundoDespuesDeCerrarDevuelveCero() {
+            var existente = voto(VoteStatus.ACCEPTED, AHORA.minus(Duration.ofHours(24)).minusSeconds(1));
+
+            assertRepetidoAceptadoCon(existente, Duration.ZERO);
+        }
+
+        @Test
+        @DisplayName("CA-4: tres ventanas despues devuelve cero, nunca negativo")
+        void tresVentanasDespuesDevuelveCero() {
+            var existente = voto(VoteStatus.ACCEPTED, AHORA.minus(Duration.ofHours(72)));
+
+            assertRepetidoAceptadoCon(existente, Duration.ZERO);
+        }
+
+        @ParameterizedTest(name = "CA-5: {0} repetido devuelve null")
+        @EnumSource(
+                value = VoteStatus.class,
+                names = {"REJECTED", "PENDING", "REVOKED"})
+        @DisplayName("CA-5: un voto no aceptado devuelve null y no consulta la ventana")
+        void noAceptadoDevuelveNull(VoteStatus estado) {
+            var existente = voto(estado, AHORA.minus(Duration.ofHours(6)));
+
+            var resultado = reintentoDe(existente);
+
+            assertThat(resultado.voto()).isSameAs(existente);
+            assertThat(resultado.yaExistia()).isTrue();
+            assertThat(resultado.proximoVotoEn()).isNull();
+            verify(ajustes, never()).actuales();
+        }
+
+        @ParameterizedTest(name = "CA-6: reintento {0} no evalua ni escribe nada")
+        @EnumSource(
+                value = VoteStatus.class,
+                names = {"ACCEPTED", "REJECTED"})
+        @DisplayName("CA-6: el reintento no evalua ni escribe nada")
+        void reintentoNoEvaluaNiEscribeNada(VoteStatus estado) {
+            var existente = voto(estado, AHORA.minus(Duration.ofHours(6)));
+
+            var resultado = reintentoDe(existente);
+
+            assertThat(resultado.yaExistia()).isTrue();
+            assertThat(resultado.voto()).isSameAs(existente);
+            verifyNoInteractions(directorio, antifraude, publicador);
+            verify(repositorio, never()).ultimoVotoAceptado(any(), any());
+            verify(repositorio, never()).ultimoVotoAceptadoEnCualquierServidor(any());
+            verify(repositorio, never()).identidadesDistintasDesdeIp(any(), any(), any());
+            verify(repositorio, never()).insertar(any(), anyString(), any(), anyString());
+            verify(repositorio, never()).guardarSenales(any(), anyList());
+            verify(repositorio, never()).crearRecompensaPendiente(any(), any(), anyString());
+        }
+
+        @Test
+        @DisplayName("CA-7: pierde la carrera contra un voto aceptado y aplica la formula")
+        void carreraConAceptadoAplicaLaFormula() {
+            var ganador = voto(VoteStatus.ACCEPTED, AHORA.minus(Duration.ofHours(6)));
+            when(repositorio.insertar(any(), eq(CLAVE), any(), anyString())).thenReturn(false);
+            when(repositorio.buscarPorClaveIdempotencia(CLAVE))
+                    .thenReturn(Optional.empty())
+                    .thenReturn(Optional.of(ganador));
+
+            var resultado = servicio.votar(SLUG, steve, "1.2.3.4", CLAVE);
+
+            assertThat(resultado.voto()).isSameAs(ganador);
+            assertThat(resultado.yaExistia()).isTrue();
+            assertThat(resultado.proximoVotoEn()).isEqualTo(Duration.ofHours(18));
+            verify(repositorio, never()).guardarSenales(any(), anyList());
+            verify(repositorio, never()).crearRecompensaPendiente(any(), any(), anyString());
+            verify(publicador, never()).publish(any());
+        }
+
+        @Test
+        @DisplayName("CA-7: pierde la carrera contra un voto rechazado y devuelve null")
+        void carreraConRechazadoDevuelveNull() {
+            var ganador = voto(VoteStatus.REJECTED, AHORA.minus(Duration.ofHours(6)));
+            when(repositorio.insertar(any(), eq(CLAVE), any(), anyString())).thenReturn(false);
+            when(repositorio.buscarPorClaveIdempotencia(CLAVE))
+                    .thenReturn(Optional.empty())
+                    .thenReturn(Optional.of(ganador));
+
+            var resultado = servicio.votar(SLUG, steve, "1.2.3.4", CLAVE);
+
+            assertThat(resultado.voto()).isSameAs(ganador);
+            assertThat(resultado.yaExistia()).isTrue();
+            assertThat(resultado.proximoVotoEn()).isNull();
+            verify(repositorio, never()).guardarSenales(any(), anyList());
+            verify(repositorio, never()).crearRecompensaPendiente(any(), any(), anyString());
+            verify(publicador, never()).publish(any());
+        }
+
+        @Test
+        @DisplayName("CA-8: un voto nuevo aceptado sigue devolviendo la ventana entera")
+        void votoNuevoAceptadoSigueDevolviendoLaVentana() {
+            var resultado = servicio.votar(SLUG, steve, "1.2.3.4", "clave-nueva");
+
+            assertThat(resultado.yaExistia()).isFalse();
+            assertThat(resultado.voto().estado()).isEqualTo(VoteStatus.ACCEPTED);
+            assertThat(resultado.proximoVotoEn()).isEqualTo(Duration.ofHours(24));
+        }
+
+        @Test
+        @DisplayName("CA-9: un creadoEn en el futuro no supera la ventana")
+        void creadoEnElFuturoNoSuperaLaVentana() {
+            var existente = voto(VoteStatus.ACCEPTED, AHORA.plus(Duration.ofHours(1)));
+
+            assertRepetidoAceptadoCon(existente, Duration.ofHours(24));
+        }
     }
 
     // --- puedeVotar: aviso previo al plugin (spec 003) -------------------------

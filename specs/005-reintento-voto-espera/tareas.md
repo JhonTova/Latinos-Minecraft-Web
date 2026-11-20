@@ -9,7 +9,7 @@ rojo va antes que el código.
   `ESTADO: completo`, sin paradas obligatorias.
 - [x] T2 · `orquestador` · Aprobación de spec y plan (P-1 a P-6) y commit
   `docs(specs): ...` con los tres documentos.
-- [ ] T3 · `pruebas-backend` · Pruebas de CA-1 a CA-9 en
+- [x] T3 · `pruebas-backend` · Pruebas de CA-1 a CA-9 en
   `CastVoteServiceTest` (`@Nested` «Reintento idempotente»), en rojo.
   - Se comprueba con `cd backend && mvn -B -pl voting -am test`.
   - Las de CA-1 a CA-4, CA-7 (aceptado) y CA-9 tienen que fallar **por
@@ -18,11 +18,11 @@ rojo va antes que el código.
     declara cuáles pasan.
   - Antes de aceptar el rojo, el `orquestador` comprueba que cada valor
     esperado sale de la fórmula de la spec (tabla del plan).
-- [ ] T4 · `pruebas-backend` · `VoteControllerTest` (CA-1 y CA-5 por HTTP;
+- [x] T4 · `pruebas-backend` · `VoteControllerTest` (CA-1 y CA-5 por HTTP;
   P-5 aprobada).
   - Se comprueba con `cd backend && mvn -B -pl app -am test -Dtest=VoteControllerTest -Dsurefire.failIfNoSpecifiedTests=false`.
   - Puede pasar ya: fija la conversión a segundos, que no cambia.
-- [ ] T5 · `orquestador` · Commit `test(voting): ...` con T3 y T4.
+- [x] T5 · `orquestador` · Commit `test(voting): ...` con T3 y T4.
 - [ ] T6 · `dev-backend` · `CastVoteService`: paso 1, paso 7 y
   `Resultado.repetido` (D1 a D6).
   - Se comprueba con `mvn -B -f backend/pom.xml verify` en verde, incluida
