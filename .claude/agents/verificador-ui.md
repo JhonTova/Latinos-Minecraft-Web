@@ -42,8 +42,13 @@ nada en la interfaz enlaza a esa ruta.
 
 ## Reglas
 
-- No des por buena una vista que no abriste. Si el navegador no está disponible,
-  dilo y devuelve `ESTADO: no se pudo verificar`.
+- No des por buena una vista que no abriste. Si no tienes las herramientas del
+  navegador (`mcp__playwright__*`), **detente en ese momento** y devuelve
+  `ESTADO: no se pudo verificar`. No las sustituyas con `curl`,
+  `Invoke-WebRequest` ni `python`: el hook las bloquea, y en las specs 002 y
+  004 intentarlo solo gastó vueltas.
+- Cada llamada empieza en la raíz: `cd frontend && npm run build` en una sola
+  llamada, no `cd frontend` y luego `npm run build`.
 - No propongas cómo arreglarlo: describe qué se ve, dónde y en qué combinación.
 - Lo que no mide una lista (jerarquía, estética) se anota como «para revisión
   humana», no como aprobado.

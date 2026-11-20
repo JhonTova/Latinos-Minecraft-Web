@@ -28,6 +28,9 @@ Lo que llega a `main` llega a producción. Ante la duda, pregunta.
 4. **Rojo.** Delega en `pruebas-backend` y/o `pruebas-frontend` las pruebas de
    los criterios. No sigas sin su evidencia de que fallan y por qué. Haz el
    commit `test(...)`.
+   Si la spec solo fija comportamiento que ya existe, el rojo es el informe de
+   mutación de antes de la prueba y no hay paso 5 (ver «Si la spec solo fija
+   comportamiento» en `spec-sdd`).
 5. **Verde.** Delega en `dev-backend` y/o `dev-frontend`. Si el frontend consume
    un endpoint nuevo, el backend va primero. Si la spec toca una pantalla,
    delega después en `verificador-ui`. Haz el commit `feat(...)` o `fix(...)`.
@@ -46,7 +49,9 @@ Lo que llega a `main` llega a producción. Ante la duda, pregunta.
   pregunta.
 - **Cómo delegar:** cada encargo lleva la ruta de la spec, los criterios que
   toca (`CA-n`), los archivos del mapa y lo que esperas de vuelta. Un subagente
-  no ve esta conversación.
+  no ve esta conversación. Incluye las formas de comando que pasan el hook:
+  `cd backend && mvn -B -pl <módulo> -am test`, `cd frontend && npm run test`,
+  sin `2>&1` ni `| tail`, y `Glob`/`Read`/`Grep` en vez de `ls` o `cat`.
 - **No reinterpretes un informe.** Si un subagente dice que no pudo, no lo des
   por hecho: reencárgalo o pregunta.
 - **Commits:** Conventional Commits en español, uno por bloque, la prueba antes

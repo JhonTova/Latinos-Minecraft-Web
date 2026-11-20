@@ -33,7 +33,10 @@ spec y el plan.
      corresponden a campos reales del backend, y nada delata `/panel/admin`.
 4. **Contrato.** Si cambió un endpoint, ¿cambiaron a la vez quien lo consume y
    sus tipos? Si toca `/api/v1/plugin/*`, ¿lo declara la spec?
-5. **Mutación**, solo si el diff toca `identity`, `voting`, `trust` o `billing`
+5. **Si el diff toca `frontend/`**, desde `frontend/`: `npm run lint`,
+   `npm run test` y `npm run build`. No des por bueno el build solo porque lo
+   diga el informe de `dev-frontend`.
+6. **Mutación**, solo si el diff toca `identity`, `voting`, `trust` o `billing`
    (ADR-0032): desde `backend/`, `mvn -B -P mutacion -pl <módulo> -am verify`.
    El informe queda en `backend/<módulo>/target/pit-reports/mutations.xml`.
    Clasifica cada mutante superviviente de las clases tocadas como *falta una

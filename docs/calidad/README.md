@@ -35,6 +35,21 @@ npm run test
 node --test .claude/hooks/
 ```
 
+### Reproducir el «antes» de una mutación sin borrar la prueba
+
+El informe de PIT queda en `target/`, que git ignora y que se sobrescribe en
+cada ejecución. Para ver qué mutantes sobrevivían antes de una prueba nueva, sin
+borrarla, se excluye su clase:
+
+```powershell
+# Desde backend/: mutación de trust como si RuleBasedTrustEngineLimitesTest no existiera
+mvn -B -Pmutacion -pl trust -am verify "-DexcludedTestClasses=com.latinosmc.trust.RuleBasedTrustEngineLimitesTest"
+```
+
+Así reprodujo el `revisor` el rojo de la spec 001: los mismos 10 supervivientes
+que había antes de la prueba. Como `target/` no se versiona, la salida se copia
+a la «Evidencia» del `tareas.md` de la spec.
+
 ## Línea base (13 de noviembre de 2026)
 
 Primera medición, sobre las 329 pruebas que ya existían y antes de las specs.
